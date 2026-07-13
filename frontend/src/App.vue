@@ -1,12 +1,24 @@
-<script setup></script>
+<script setup>
+import Navbar from '@/components/Navbar.vue'
+import Home from '@/pages/Home.vue'
+</script>
 
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-    
-  </p>
+  <!-- <Navbar /> -->
+  <main>
+    <Home />
+  </main>
 </template>
 
-<style scoped></style>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--deep-space-blue);
+}
+</style>

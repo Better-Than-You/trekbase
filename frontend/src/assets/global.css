@@ -1,0 +1,23 @@
+:root {
+  --yale-blue: #024D77;
+  --yale-blue-rgb: 2, 77, 119;
+  --deep-space-blue: #033857;
+  --deep-space-blue-rgb: 3, 56, 87;
+  --rich-cerulean: #457594;
+  --rich-cerulean-rgb: 69, 117, 148;
+  --parchment: #F0EDE8;
+  --parchment-rgb: 240, 237, 232;
+  --pale-slate: #C0C7CD;
+  --pale-slate-rgb: 192, 199, 205;
+
+  --bs-primary: var(--yale-blue);
+  --bs-primary-rgb: var(--yale-blue-rgb);
+  --bs-secondary: var(--rich-cerulean);
+  --bs-secondary-rgb: var(--rich-cerulean-rgb);
+  --bs-dark: var(--deep-space-blue);
+  --bs-dark-rgb: var(--deep-space-blue-rgb);
+  --bs-light: var(--parchment);
+  --bs-light-rgb: var(--parchment-rgb);
+
+  /* converted from the global palette */
+}
