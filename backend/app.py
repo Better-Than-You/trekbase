@@ -3,7 +3,7 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from db.models import db
 from db import seed_admin
-from routes.auth import auth_bp
+from routes import auth_bp
 
 # ------------- config ------------------
 app = Flask(__name__)
@@ -25,6 +25,8 @@ with app.app_context():
 
 # --------------- bps ----------------
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+# can add a dev blueprint in future hmmmmmmmm
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token
 from db.models import db, User
 
 auth_bp = Blueprint('auth', __name__)
@@ -30,8 +30,17 @@ def register():
     db.session.add(user)
     db.session.commit()
 
+    access_token = create_access_token(
+        identity=str(user.id),
+        additional_claims={'role': user.role, 'email': user.email}
+    )
+    refresh_token = create_refresh_token(
+        identity=str(user.id),
+        additional_claims={'role': user.role, 'email': user.email}
+    )
+
     print(f'registered : {email} : {role}')
-    return jsonify({'message': 'User created successfully', 'user': user.to_dict()}), 201
+    return jsonify({'message': 'User created successfully', 'user': user.to_dict(), 'access_token': access_token, 'refresh_token': refresh_token}), 201
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -54,8 +63,12 @@ def login():
         identity=str(user.id),
         additional_claims={'role': user.role, 'email': user.email}
     )
+    refresh_token = create_refresh_token(
+        identity=str(user.id),
+        additional_claims={'role': user.role, 'email': user.email}
+    )
     print(f'login : {email}')
-    return jsonify({'access_token': access_token, 'user': user.to_dict()}), 200
+    return jsonify({'access_token': access_token, 'user': user.to_dict(), 'access_token': access_token, 'refresh_token': refresh_token}), 200
 
 
 @auth_bp.route('/profile', methods=['GET'])
