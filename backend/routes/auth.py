@@ -14,32 +14,28 @@ def register():
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     name = data.get('name', '').strip()
-    role = data.get('role', 'user').strip().lower()
 
     if not email or not password or not name:
         return jsonify({'error': 'Email, password and name are required'}), 400
 
-    if role not in ('user', 'staff'):
-        return jsonify({'error': 'Role must be user or staff'}), 400
-
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already registered'}), 409
 
-    user = User(email=email, name=name, role=role)
+    user = User(email=email, name=name)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
 
     access_token = create_access_token(
         identity=str(user.id),
-        additional_claims={'role': user.role, 'email': user.email}
+        additional_claims={'role': 'user', 'email': user.email}
     )
     refresh_token = create_refresh_token(
         identity=str(user.id),
-        additional_claims={'role': user.role, 'email': user.email}
+        additional_claims={'role': 'user', 'email': user.email}
     )
 
-    print(f'registered : {email} : {role}')
+    print(f'registered : {email}')
     return jsonify({'message': 'User created successfully', 'user': user.to_dict(), 'access_token': access_token, 'refresh_token': refresh_token}), 201
 
 
@@ -61,14 +57,14 @@ def login():
 
     access_token = create_access_token(
         identity=str(user.id),
-        additional_claims={'role': user.role, 'email': user.email}
+        additional_claims={'role': 'user', 'email': user.email}
     )
     refresh_token = create_refresh_token(
         identity=str(user.id),
-        additional_claims={'role': user.role, 'email': user.email}
+        additional_claims={'role': 'user', 'email': user.email}
     )
     print(f'login : {email}')
-    return jsonify({'access_token': access_token, 'user': user.to_dict(), 'access_token': access_token, 'refresh_token': refresh_token}), 200
+    return jsonify({'access_token': access_token, 'user': user.to_dict(), 'refresh_token': refresh_token}), 200
 
 
 @auth_bp.route('/profile', methods=['GET'])

@@ -11,7 +11,7 @@ class User(db.Model):
     email = db.Column(db.String, unique=True, nullable=False)
     password_hash = db.Column(db.String, nullable=False)
     name = db.Column(db.String, nullable=False)
-    created_at = db.Column(db.DateTime) # directly storing datetime object
+    created_at = db.Column(db.DateTime)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
