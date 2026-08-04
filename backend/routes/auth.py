@@ -1,6 +1,11 @@
+import os
+from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token
 from db.models import db, User
+
+load_dotenv()
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@trekbase.com')
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -36,7 +41,9 @@ def register():
     )
 
     print(f'registered : {email}')
-    return jsonify({'message': 'User created successfully', 'user': user.to_dict(), 'access_token': access_token, 'refresh_token': refresh_token}), 201
+    user_dict = user.to_dict()
+    user_dict['role'] = 'user'
+    return jsonify({'message': 'User created successfully', 'user': user_dict, 'access_token': access_token, 'refresh_token': refresh_token}), 201
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -55,16 +62,20 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({'error': 'Invalid email or password'}), 401
 
+    role = 'admin' if email == ADMIN_EMAIL else 'user'
+
     access_token = create_access_token(
         identity=str(user.id),
-        additional_claims={'role': 'user', 'email': user.email}
+        additional_claims={'role': role, 'email': user.email}
     )
     refresh_token = create_refresh_token(
         identity=str(user.id),
-        additional_claims={'role': 'user', 'email': user.email}
+        additional_claims={'role': role, 'email': user.email}
     )
     print(f'login : {email}')
-    return jsonify({'access_token': access_token, 'user': user.to_dict(), 'refresh_token': refresh_token}), 200
+    user_dict = user.to_dict()
+    user_dict['role'] = role
+    return jsonify({'access_token': access_token, 'user': user_dict, 'refresh_token': refresh_token}), 200
 
 
 @auth_bp.route('/profile', methods=['GET'])

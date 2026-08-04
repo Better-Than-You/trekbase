@@ -29,3 +29,7 @@ export function register(name, email, password) {
 export function getProfile() {
   return request('/auth/profile')
 }
+
+export function getAdminDashboard() {
+  return request('/admin/dashboard')
+}

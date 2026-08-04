@@ -33,4 +33,6 @@ def dashboard():
         'bookings': bookings,
         'staff': staff,
         'users': users,
-    }), 200
+    }), 200 
+    # working verified with postman
+
