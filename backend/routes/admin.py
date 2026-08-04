@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
 from db.models import db, User, Staff, Trek, Booking
+import os 
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -22,7 +23,7 @@ def booking_with_details(booking):
 def dashboard():
     bookings = [booking_with_details(b) for b in Booking.query.all()]
     staff = [s.to_dict() for s in Staff.query.all()]
-    users = [u.to_dict() for u in User.query.all()]
+    users = [u.to_dict() for u in User.query.all() if u.email != os.getenv('ADMIN_EMAIL', '')]
 
     return jsonify({
         'counts': {

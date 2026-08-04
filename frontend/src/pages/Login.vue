@@ -17,7 +17,18 @@ async function handleSubmit() {
   try {
     const data = await login(email.value, password.value)
     setAuth(data.user, data.access_token)
-    router.push('/')
+    
+    // redirect to dashboard
+    // router.push('/')
+
+    // if admin
+    if (data.user.role === 'admin') {
+      router.push('/admin/dashboard')
+    } else if (data.user.role === 'staff') {
+      router.push('/staff/dashboard')
+    } else if (data.user.role === 'user') {
+      router.push('/dashboard') // plain dashboard for normal users
+    }
   } catch (e) {
     error.value = e.message
   } finally {
