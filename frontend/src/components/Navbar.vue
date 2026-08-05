@@ -25,10 +25,12 @@ function handleLogout() {
                      style="letter-spacing: 1px;">DASHBOARD</router-link>
         <button type="button" class="btn btn-outline-light btn-sm px-2"
                 style="letter-spacing: 1px;">BOOKING HISTORY</button>
-        <button type="button" class="btn btn-outline-light btn-sm px-2"
-                style="letter-spacing: 1px;">USERLIST</button>
-        <button type="button" class="btn btn-outline-light btn-sm px-2"
-                style="letter-spacing: 1px;">STAFFLIST</button>
+        <router-link to="/admin/treks" class="btn btn-outline-light btn-sm px-2"
+                     style="letter-spacing: 1px;">TREKLIST</router-link>
+        <router-link to="/admin/users" class="btn btn-outline-light btn-sm px-2"
+                     style="letter-spacing: 1px;">USERLIST</router-link>
+        <router-link to="/admin/staff" class="btn btn-outline-light btn-sm px-2"
+                     style="letter-spacing: 1px;">STAFFLIST</router-link>
         <button @click="handleLogout" class="btn btn-outline-light btn-sm px-2"
                 style="letter-spacing: 1px;">LOGOUT</button>
       </div>

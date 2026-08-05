@@ -33,3 +33,60 @@ export function getProfile() {
 export function getAdminDashboard() {
   return request('/admin/dashboard')
 }
+
+export function getAdminUsers() {
+  return request('/admin/users')
+}
+
+export function addUser(name, email, password) {
+  return request('/admin/users', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password }),
+  })
+}
+
+export function getAdminStaff() {
+  return request('/admin/staff')
+}
+
+export function addStaff(name, contact, password) {
+  return request('/admin/staff', {
+    method: 'POST',
+    body: JSON.stringify({ name, contact, password }),
+  })
+}
+
+export function getUserDetail(userId) {
+  return request(`/admin/users/${userId}`)
+}
+
+export function deleteUser(userId) {
+  return request(`/admin/users/${userId}`, { method: 'DELETE' })
+}
+
+export function getStaffDetail(staffId) {
+  return request(`/admin/staff/${staffId}`)
+}
+
+export function deleteStaff(staffId) {
+  return request(`/admin/staff/${staffId}`, { method: 'DELETE' })
+}
+
+export function getAdminTreks() {
+  return request('/admin/treks')
+}
+
+export function addTrek(payload) {
+  return request('/admin/treks', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export function getTrekDetail(trekId) {
+  return request(`/admin/treks/${trekId}`)
+}
+
+export function deleteTrek(trekId) {
+  return request(`/admin/treks/${trekId}`, { method: 'DELETE' })
+}

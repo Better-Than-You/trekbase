@@ -32,7 +32,11 @@ class Staff(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     contact = db.Column(db.String)
+    password_hash = db.Column(db.String)
     status = db.Column(db.String, default='available') # available/assigned/not_working
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
 
     def to_dict(self):
         return {
