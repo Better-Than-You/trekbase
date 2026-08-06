@@ -15,23 +15,17 @@ const startDate = ref('')
 const endDate = ref('')
 const assignedStaffId = ref('')
 const staffOptions = ref([])
-const error = ref('')
-const success = ref('')
-const loading = ref(false)
 
 onMounted(async () => {
   try {
     const data = await getAdminStaff()
     staffOptions.value = data.staff
-  } catch (e) {
-    error.value = e.message
+  } catch {
+    staffOptions.value = []
   }
 })
 
 async function handleSubmit() {
-  error.value = ''
-  success.value = ''
-  loading.value = true
   try {
     await addTrek({
       name: name.value,
@@ -44,7 +38,6 @@ async function handleSubmit() {
       end_date: endDate.value,
       assigned_staff_id: assignedStaffId.value || null,
     })
-    success.value = 'Trek added successfully'
     name.value = ''
     location.value = ''
     durationDays.value = ''
@@ -52,87 +45,84 @@ async function handleSubmit() {
     startDate.value = ''
     endDate.value = ''
     assignedStaffId.value = ''
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    loading.value = false
+  } catch {
   }
 }
 </script>
 
 <template>
-  <section class="min-vh-100" style="padding-top: 56px; background: var(--deep-space-blue);">
-    <div class="container py-4" style="max-width: 720px;">
-      <h1 class="text-light fw-bold mb-4" style="letter-spacing: 3px;">ADD TREK</h1>
-
-      <div class="card border-0 shadow-sm">
-        <div class="card-body p-4">
-          <div v-if="error" class="alert alert-danger py-2 small">{{ error }}</div>
-          <div v-if="success" class="alert alert-success py-2 small">{{ success }}</div>
-
-          <form @submit.prevent="handleSubmit">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Name</label>
-                <input v-model="name" type="text" class="form-control" required placeholder="e.g. Everest Base Camp">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Location</label>
-                <input v-model="location" type="text" class="form-control" required placeholder="e.g. Solukhumbu">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Difficulty</label>
-                <select v-model="difficulty" class="form-select">
-                  <option value="easy">Easy</option>
-                  <option value="moderate">Moderate</option>
-                  <option value="hard">Hard</option>
-                </select>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Status</label>
-                <select v-model="status" class="form-select">
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="open">Open</option>
-                  <option value="closed">Closed</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Duration (days)</label>
-                <input v-model="durationDays" type="number" min="1" class="form-control" required>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Available Slots</label>
-                <input v-model="availableSlots" type="number" min="0" class="form-control" required>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">Start Date</label>
-                <input v-model="startDate" type="date" class="form-control">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label">End Date</label>
-                <input v-model="endDate" type="date" class="form-control">
-              </div>
-              <div class="col-md-6 mb-4">
-                <label class="form-label">Assigned Staff</label>
-                <select v-model="assignedStaffId" class="form-select">
-                  <option value="">None</option>
-                  <option v-for="s in staffOptions" :key="s.id" :value="s.id">{{ s.name }}</option>
-                </select>
-              </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100 py-2" :disabled="loading">
-              {{ loading ? 'Adding...' : 'Add Trek' }}
-            </button>
-          </form>
-        </div>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="fw-bold text-uppercase mb-0" style="letter-spacing: 0.04em;">Add Trek</h4>
+        <p class="text-secondary small mb-0">Create a new trek route</p>
       </div>
+      <button @click="router.push('/admin/treks')" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </button>
+    </div>
 
-      <div class="text-center mt-3">
-        <button @click="router.push('/admin/treks')" class="btn btn-link text-light">View trek list</button>
+    <div class="card shadow-sm" style="max-width: 760px;">
+      <div class="card-body p-4">
+        <form @submit.prevent="handleSubmit">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">Name</label>
+              <input v-model="name" type="text" class="form-control" required placeholder="e.g. Everest Base Camp">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">Location</label>
+              <input v-model="location" type="text" class="form-control" required placeholder="e.g. Solukhumbu">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">Difficulty</label>
+              <select v-model="difficulty" class="form-select">
+                <option value="easy">Easy</option>
+                <option value="moderate">Moderate</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">Status</label>
+              <select v-model="status" class="form-select">
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">Duration (days)</label>
+              <input v-model="durationDays" type="number" min="1" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">Available Slots</label>
+              <input v-model="availableSlots" type="number" min="0" class="form-control" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">Start Date</label>
+              <input v-model="startDate" type="date" class="form-control">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">End Date</label>
+              <input v-model="endDate" type="date" class="form-control">
+            </div>
+            <div class="col-md-6 mb-4">
+              <label class="form-label small fw-semibold">Assigned Staff</label>
+              <select v-model="assignedStaffId" class="form-select">
+                <option value="">Not assigned</option>
+                <option v-for="s in staffOptions" :key="s.id" :value="s.id">{{ s.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-plus-lg me-1"></i>Add Trek
+            </button>
+            <button type="button" class="btn btn-outline-secondary" @click="router.push('/admin/treks')">Cancel</button>
+          </div>
+        </form>
       </div>
     </div>
-  </section>
+  </div>
 </template>

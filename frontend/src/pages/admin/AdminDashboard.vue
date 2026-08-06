@@ -2,52 +2,40 @@
 import { ref, onMounted } from 'vue'
 import { getAdminDashboard, deleteUser, deleteStaff, deleteTrek } from '@/lib/api'
 
-const data = ref(null)
-const loading = ref(true)
-const error = ref('')
+const data = ref({
+  counts: { bookings: 0, treks: 0, staff: 0, users: 0 },
+  treks: [],
+  bookings: [],
+  staff: [],
+  users: [],
+})
 
 onMounted(async () => {
   try {
     data.value = await getAdminDashboard()
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    loading.value = false
+  } catch {
   }
 })
 
-function bookingBadge(status) {
-  return {
-    booked: 'bg-primary',
-    cancelled: 'bg-danger',
-    completed: 'bg-success',
-  }[status] || 'bg-secondary'
+function difficultyBadge(d) {
+  return ({
+    easy: 'bg-success', moderate: 'bg-warning text-dark', hard: 'bg-danger',
+  })[d] || 'bg-secondary'
 }
 
-function staffBadge(status) {
-  return {
-    available: 'bg-success',
-    assigned: 'bg-primary',
-    not_working: 'bg-secondary',
-  }[status] || 'bg-secondary'
+function statusBadge(s) {
+  return ({
+    pending: 'bg-secondary', approved: 'bg-info text-dark', open: 'bg-success',
+    closed: 'bg-secondary', completed: 'bg-primary',
+  })[s] || 'bg-secondary'
 }
 
-function trekDifficultyBadge(d) {
-  return {
-    easy: 'bg-success',
-    moderate: 'bg-warning text-dark',
-    hard: 'bg-danger',
-  }[d] || 'bg-secondary'
+function bookingBadge(s) {
+  return ({ booked: 'bg-primary', cancelled: 'bg-danger', completed: 'bg-success' })[s] || 'bg-secondary'
 }
 
-function trekStatusBadge(s) {
-  return {
-    pending: 'bg-secondary',
-    approved: 'bg-info text-dark',
-    open: 'bg-success',
-    closed: 'bg-dark',
-    completed: 'bg-primary',
-  }[s] || 'bg-secondary'
+function staffBadge(s) {
+  return ({ available: 'bg-success', assigned: 'bg-primary', not_working: 'bg-secondary' })[s] || 'bg-secondary'
 }
 
 async function handleDeleteTrek(t) {
@@ -85,86 +73,103 @@ async function handleDeleteStaff(s) {
 </script>
 
 <template>
-  <section class="admin-page">
-    <div class="container pt-5 pb-5">
-      <h1 class="text-light fw-bold mb-1" style="letter-spacing: 4px;">ADMIN DASHBOARD</h1>
-      <p class="text-secondary mb-4" style="letter-spacing: 1px;">Overview of reservations, staff and trekkers</p>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="fw-bold text-uppercase mb-0" style="letter-spacing: 0.04em;">Admin Dashboard</h4>
+        <p class="text-secondary small mb-0">An overview of everything happening in the system</p>
+      </div>
+    </div>
 
-      <div v-if="error" class="alert alert-danger">{{ error }}</div>
-      <div v-else-if="loading" class="text-light">Loading...</div>
-
-      <template v-else>
-        <div class="row g-3 mb-4">
-          <div class="col-md-3 col-6">
-            <div class="card stat-card border-0">
-              <div class="card-body">
-                <h5 class="stat-label">Reservations</h5>
-                <p class="stat-value mb-0">{{ data.counts.bookings }}</p>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-3 bg-primary text-white">
+                <i class="bi bi-ticket-perforated"></i>
               </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-6">
-            <div class="card stat-card border-0">
-              <div class="card-body">
-                <h5 class="stat-label">Treks</h5>
-                <p class="stat-value mb-0">{{ data.counts.treks }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-6">
-            <div class="card stat-card border-0">
-              <div class="card-body">
-                <h5 class="stat-label">Staff</h5>
-                <p class="stat-value mb-0">{{ data.counts.staff }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-6">
-            <div class="card stat-card border-0">
-              <div class="card-body">
-                <h5 class="stat-label">Trekkers</h5>
-                <p class="stat-value mb-0">{{ data.counts.users }}</p>
+              <div>
+                <div class="text-secondary text-uppercase small fw-semibold">Reservations</div>
+                <div class="h3 mb-0 fw-bold">{{ data.counts.bookings }}</div>
               </div>
             </div>
           </div>
         </div>
-
-        <div class="card border-0 section-card mb-4">
-          <div class="card-header section-header">
-            Treks
-            <router-link to="/admin/treks/add" class="btn btn-sm bg-white text-dark" style="float: right;">Add Trek</router-link>
+        <div class="col-6 col-xl-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-3 bg-success text-white">
+                <i class="bi bi-compass"></i>
+              </div>
+              <div>
+                <div class="text-secondary text-uppercase small fw-semibold">Treks</div>
+                <div class="h3 mb-0 fw-bold">{{ data.counts.treks }}</div>
+              </div>
+            </div>
           </div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-3 bg-warning text-white">
+                <i class="bi bi-person-gear"></i>
+              </div>
+              <div>
+                <div class="text-secondary text-uppercase small fw-semibold">Trekking staff</div>
+                <div class="h3 mb-0 fw-bold">{{ data.counts.staff }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="card shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+              <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-3 bg-info text-white">
+                <i class="bi bi-people"></i>
+              </div>
+              <div>
+                <div class="text-secondary text-uppercase small fw-semibold">Trekkers</div>
+                <div class="h3 mb-0 fw-bold">{{ data.counts.users }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+          <h6 class="mb-0 fw-bold">Treks</h6>
+          <router-link to="/admin/treks/add" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add Trek
+          </router-link>
+        </div>
+        <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-              <thead>
+              <thead class="table-light">
                 <tr>
-                  <th>#</th>
+                  <th class="ps-3">#</th>
                   <th>Name</th>
                   <th>Location</th>
                   <th>Difficulty</th>
                   <th>Slots</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  <th class="pe-3 text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="data.treks.length === 0">
-                  <td colspan="7" class="text-muted text-center py-4">No treks added yet</td>
-                </tr>
                 <tr v-for="t in data.treks" :key="t.id">
-                  <td>{{ t.id }}</td>
-                  <td>{{ t.name }}</td>
-                  <td>{{ t.location }}</td>
-                  <td><span class="badge" :class="trekDifficultyBadge(t.difficulty)">{{ t.difficulty }}</span></td>
+                  <td class="ps-3 text-secondary">{{ t.id }}</td>
+                  <td class="fw-semibold">{{ t.name }}</td>
+                  <td class="text-secondary">{{ t.location }}</td>
+                  <td><span class="badge rounded-pill fw-semibold" :class="difficultyBadge(t.difficulty)">{{ t.difficulty }}</span></td>
                   <td>{{ t.available_slots }}</td>
-                  <td><span class="badge" :class="trekStatusBadge(t.status)">{{ t.status }}</span></td>
-                  <td>
-                    <router-link :to="`/admin/treks/${t.id}`" class="btn btn-sm btn-outline-primary me-1"
-                                 title="View details">
+                  <td><span class="badge rounded-pill fw-semibold" :class="statusBadge(t.status)">{{ t.status }}</span></td>
+                  <td class="pe-3 text-end text-nowrap">
+                    <router-link :to="`/admin/treks/${t.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">
                       <i class="bi bi-eye"></i>
                     </router-link>
-                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete"
-                            @click="handleDeleteTrek(t)">
+                    <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" @click="handleDeleteTrek(t)">
                       <i class="bi bi-trash"></i>
                     </button>
                   </td>
@@ -172,77 +177,82 @@ async function handleDeleteStaff(s) {
               </tbody>
             </table>
           </div>
+          <div v-if="!data.treks.length" class="text-center text-secondary py-5">
+            <i class="bi bi-signpost-split fs-3 d-block mb-2"></i>
+            <p class="mb-1 fw-semibold text-dark">No treks yet</p>
+            <p class="small mb-0">Add your first trek with the button above.</p>
+          </div>
         </div>
+      </div>
 
-        <div class="card border-0 section-card mb-4">
-          <div class="card-header section-header">Reservations</div>
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+          <h6 class="mb-0 fw-bold">Reservations</h6>
+          <span class="badge rounded-pill bg-primary">{{ data.bookings.length }}</span>
+        </div>
+        <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-              <thead>
+              <thead class="table-light">
                 <tr>
-                  <th>#</th>
+                  <th class="ps-3">#</th>
                   <th>Trek</th>
                   <th>Trekker</th>
                   <th>Status</th>
-                  <th>Booked On</th>
+                  <th class="pe-3">Booked On</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="data.bookings.length === 0">
-                  <td colspan="5" class="text-muted text-center py-4">No reservations yet</td>
-                </tr>
                 <tr v-for="b in data.bookings" :key="b.id">
-                  <td>{{ b.id }}</td>
-                  <td>{{ b.trek ? b.trek.name : '-' }}</td>
+                  <td class="ps-3 text-secondary">{{ b.id }}</td>
+                  <td class="fw-semibold">{{ b.trek ? b.trek.name : '-' }}</td>
                   <td>{{ b.user ? b.user.name : '-' }}</td>
-                  <td>
-                    <span class="badge" :class="bookingBadge(b.status)">{{ b.status }}</span>
-                  </td>
-                  <td>{{ b.booking_date }}</td>
+                  <td><span class="badge rounded-pill fw-semibold" :class="bookingBadge(b.status)">{{ b.status }}</span></td>
+                  <td class="pe-3 text-secondary">{{ b.booking_date }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <div v-if="!data.bookings.length" class="text-center text-secondary py-5">
+            <i class="bi bi-signpost-split fs-3 d-block mb-2"></i>
+            <p class="mb-1 fw-semibold text-dark">No reservations yet</p>
+            <p class="small mb-0">Bookings will appear here as soon as trekkers sign up.</p>
+          </div>
         </div>
+      </div>
 
-        <div class="row g-4">
-          <div class="col-lg-6">
-            <div class="card border-0 section-card">
-              <div class="card-header section-header">
-                Staff
-                <router-link to="/admin/staff/add" class="btn btn-sm bg-white text-dark" style="float: right;">Add
-                  Staff</router-link>
-              </div>
-
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+              <h6 class="mb-0 fw-bold">Trekking staff</h6>
+              <router-link to="/admin/staff/add" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add Staff
+              </router-link>
+            </div>
+            <div class="card-body p-0">
               <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                  <thead>
+                  <thead class="table-light">
                     <tr>
-                      <th>#</th>
+                      <th class="ps-3">#</th>
                       <th>Name</th>
                       <th>Contact</th>
                       <th>Status</th>
-                      <th>Actions</th>
+                      <th class="pe-3 text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-if="data.staff.length === 0">
-                      <td colspan="5" class="text-muted text-center py-4">No staff added yet</td>
-                    </tr>
                     <tr v-for="s in data.staff" :key="s.id">
-                      <td>{{ s.id }}</td>
-                      <td>{{ s.name }}</td>
-                      <td>{{ s.contact }}</td>
-                      <td>
-                        <span class="badge" :class="staffBadge(s.status)">{{ s.status }}</span>
-                      </td>
-                      <td>
-                        <router-link :to="`/admin/staff/${s.id}`" class="btn btn-sm btn-outline-primary me-1"
-                                     title="View details">
+                      <td class="ps-3 text-secondary">{{ s.id }}</td>
+                      <td class="fw-semibold">{{ s.name }}</td>
+                      <td class="text-secondary">{{ s.contact }}</td>
+                      <td><span class="badge rounded-pill fw-semibold" :class="staffBadge(s.status)">{{ s.status }}</span></td>
+                      <td class="pe-3 text-end text-nowrap">
+                        <router-link :to="`/admin/staff/${s.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">
                           <i class="bi bi-eye"></i>
                         </router-link>
-                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete"
-                                @click="handleDeleteStaff(s)">
+                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" @click="handleDeleteStaff(s)">
                           <i class="bi bi-trash"></i>
                         </button>
                       </td>
@@ -250,90 +260,55 @@ async function handleDeleteStaff(s) {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-
-          <div class="col-lg-6">
-            <div class="card border-0 section-card">
-              <div class="card-header section-header">
-                User
-                <router-link to="/admin/user/add" class="btn btn-sm bg-white text-dark" style="float: right;">Add
-                  User</router-link>
-              </div>
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="data.users.length === 0">
-                      <td colspan="4" class="text-muted text-center py-4">No users yet</td>
-                    </tr>
-                    <tr v-for="u in data.users" :key="u.id">
-                      <td>{{ u.id }}</td>
-                      <td>{{ u.name }}</td>
-                      <td>{{ u.email }}</td>
-                      <td>
-                        <router-link :to="`/admin/users/${u.id}`" class="btn btn-sm btn-outline-primary me-1"
-                                     title="View details">
-                          <i class="bi bi-eye"></i>
-                        </router-link>
-                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete"
-                                @click="handleDeleteUser(u)">
-                          <i class="bi bi-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div v-if="!data.staff.length" class="text-center text-secondary py-5">
+                <p class="mb-1 fw-semibold text-dark">No staff added yet</p>
               </div>
             </div>
           </div>
         </div>
-      </template>
+
+        <div class="col-lg-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+              <h6 class="mb-0 fw-bold">Users (Trekkers)</h6>
+              <router-link to="/admin/user/add" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Add User
+              </router-link>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th class="ps-3">#</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th class="pe-3 text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="u in data.users" :key="u.id">
+                      <td class="ps-3 text-secondary">{{ u.id }}</td>
+                      <td class="fw-semibold">{{ u.name }}</td>
+                      <td class="text-secondary">{{ u.email }}</td>
+                      <td class="pe-3 text-end text-nowrap">
+                        <router-link :to="`/admin/users/${u.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">
+                          <i class="bi bi-eye"></i>
+                        </router-link>
+                        <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" @click="handleDeleteUser(u)">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div v-if="!data.users.length" class="text-center text-secondary py-5">
+                <p class="mb-1 fw-semibold text-dark">No users yet</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </section>
 </template>
-
-<style scoped>
-.admin-page {
-  min-height: 100vh;
-  background: var(--deep-space-blue);
-  padding-top: 56px;
-}
-
-.stat-card {
-  background: var(--parchment);
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--rich-cerulean);
-  margin-bottom: 0.25rem;
-}
-
-.stat-value {
-  font-size: 2rem;
-  font-weight: 800;
-  color: var(--deep-space-blue);
-}
-
-.section-card {
-  background: var(--parchment);
-}
-
-.section-header {
-  background: var(--yale-blue);
-  color: #fff;
-  font-weight: 600;
-  letter-spacing: 2px;
-  border-bottom: 0;
-}
-</style>

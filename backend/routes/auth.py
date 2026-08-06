@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token
-from db.models import db, User
+from db.models import db, User, Staff
 
 load_dotenv()
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@trekbase.com')
@@ -58,24 +58,41 @@ def login():
     if not email or not password:
         return jsonify({'error': 'Email and password are required'}), 400
 
+    # trekkers or admin
     user = User.query.filter_by(email=email).first()
-    if not user or not user.check_password(password):
-        return jsonify({'error': 'Invalid email or password'}), 401
+    if user and user.check_password(password):
+        role = 'admin' if email == ADMIN_EMAIL else 'user'
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={'role': role, 'email': user.email}
+        )
+        refresh_token = create_refresh_token(
+            identity=str(user.id),
+            additional_claims={'role': role, 'email': user.email}
+        )
+        user_dict = user.to_dict()
+        user_dict['role'] = role
+        print(f'login : {email} : {role}')
+        return jsonify({'access_token': access_token, 'user': user_dict, 'refresh_token': refresh_token}), 200
 
-    role = 'admin' if email == ADMIN_EMAIL else 'user'
+    # staff
+    staff = Staff.query.filter_by(email=email).first()
+    if staff and staff.password_hash and staff.check_password(password):
+        role = 'staff'
+        access_token = create_access_token(
+            identity=str(staff.id),
+            additional_claims={'role': role, 'email': staff.email}
+        )
+        refresh_token = create_refresh_token(
+            identity=str(staff.id),
+            additional_claims={'role': role, 'email': staff.email}
+        )
+        staff_dict = staff.to_dict()
+        staff_dict['role'] = role
+        print(f'login : {email} : {role}')
+        return jsonify({'access_token': access_token, 'user': staff_dict, 'refresh_token': refresh_token}), 200
 
-    access_token = create_access_token(
-        identity=str(user.id),
-        additional_claims={'role': role, 'email': user.email}
-    )
-    refresh_token = create_refresh_token(
-        identity=str(user.id),
-        additional_claims={'role': role, 'email': user.email}
-    )
-    print(f'login : {email}')
-    user_dict = user.to_dict()
-    user_dict['role'] = role
-    return jsonify({'access_token': access_token, 'user': user_dict, 'refresh_token': refresh_token}), 200
+    return jsonify({'error': 'Invalid email or password'}), 401
 
 
 @auth_bp.route('/profile', methods=['GET'])

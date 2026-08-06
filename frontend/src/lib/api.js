@@ -49,10 +49,10 @@ export function getAdminStaff() {
   return request('/admin/staff')
 }
 
-export function addStaff(name, contact, password) {
+export function addStaff(name, contact, email, password) {
   return request('/admin/staff', {
     method: 'POST',
-    body: JSON.stringify({ name, contact, password }),
+    body: JSON.stringify({ name, contact, email, password }),
   })
 }
 
@@ -89,4 +89,50 @@ export function getTrekDetail(trekId) {
 
 export function deleteTrek(trekId) {
   return request(`/admin/treks/${trekId}`, { method: 'DELETE' })
+}
+
+export function getUserDashboard() {
+  return request('/user/dashboard')
+}
+
+export function searchTreks(q) {
+  const query = q ? `?q=${encodeURIComponent(q)}` : ''
+  return request(`/user/treks${query}`)
+}
+
+export function getMyBookings() {
+  return request('/user/bookings')
+}
+
+export function bookTrek(trekId) {
+  return request('/user/bookings', {
+    method: 'POST',
+    body: JSON.stringify({ trek_id: trekId }),
+  })
+}
+
+export function cancelBooking(bookingId) {
+  return request(`/user/bookings/${bookingId}`, { method: 'DELETE' })
+}
+
+export function updateProfile(name, password) {
+  return request('/user/profile', {
+    method: 'PUT',
+    body: JSON.stringify({ name, password }),
+  })
+}
+
+export function getStaffDashboard() {
+  return request('/staff/dashboard')
+}
+
+export function getStaffTrek(trekId) {
+  return request(`/staff/treks/${trekId}`)
+}
+
+export function updateStaffTrek(trekId, payload) {
+  return request(`/staff/treks/${trekId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
 }

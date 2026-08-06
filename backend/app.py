@@ -5,6 +5,8 @@ from db.models import db
 from db import seed_admin
 from routes import auth_bp
 from routes import admin_bp
+from routes import user_bp
+from routes import staff_bp
 
 # ------------- config ------------------
 app = Flask(__name__)
@@ -27,6 +29,8 @@ with app.app_context():
 # --------------- bps ----------------
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(user_bp, url_prefix='/api/user')
+app.register_blueprint(staff_bp, url_prefix='/api/staff')
 
 # can add a dev blueprint in future hmmmmmmmm
 

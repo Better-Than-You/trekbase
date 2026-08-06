@@ -1,28 +1,23 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { getAdminStaff, deleteStaff } from '@/lib/api'
 
+const router = useRouter()
+
 const staff = ref([])
-const loading = ref(true)
-const error = ref('')
 
 onMounted(async () => {
   try {
     const data = await getAdminStaff()
     staff.value = data.staff
-  } catch (e) {
-    error.value = e.message
-  } finally {
-    loading.value = false
+  } catch {
+    staff.value = []
   }
 })
 
-function staffBadge(status) {
-  return {
-    available: 'bg-success',
-    assigned: 'bg-primary',
-    not_working: 'bg-secondary',
-  }[status] || 'bg-secondary'
+function staffBadge(s) {
+  return ({ available: 'bg-success', assigned: 'bg-primary', not_working: 'bg-secondary' })[s] || 'bg-secondary'
 }
 
 async function handleDelete(s) {
@@ -37,43 +32,40 @@ async function handleDelete(s) {
 </script>
 
 <template>
-  <section class="min-vh-100" style="padding-top: 56px; background: var(--deep-space-blue);">
-    <div class="container py-4">
-      <h1 class="text-light fw-bold mb-4" style="letter-spacing: 3px;">STAFF LIST</h1>
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="fw-bold text-uppercase mb-0" style="letter-spacing: 0.04em;">Trekking Staff</h4>
+        <p class="text-secondary small mb-0">Staff accounts are created here, they cannot register themselves</p>
+      </div>
+      <button @click="router.push('/admin/staff/add')" class="btn btn-primary">
+        <i class="bi bi-person-plus me-1"></i>Add Staff
+      </button>
+    </div>
 
-      <div v-if="error" class="alert alert-danger">{{ error }}</div>
-      <div v-else-if="loading" class="text-light">Loading...</div>
-
-      <div v-else class="card border-0 shadow-sm">
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>#</th>
+                <th class="ps-3">#</th>
                 <th>Name</th>
                 <th>Contact</th>
                 <th>Status</th>
                 <th>Assigned Treks</th>
-                <th>Actions</th>
+                <th class="pe-3 text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="staff.length === 0">
-                <td colspan="6" class="text-center text-muted py-4">No staff added yet</td>
-              </tr>
               <tr v-for="s in staff" :key="s.id">
-                <td>{{ s.id }}</td>
-                <td>{{ s.name }}</td>
-                <td>{{ s.contact }}</td>
-                <td>
-                  <span class="badge" :class="staffBadge(s.status)">{{ s.status }}</span>
-                </td>
-                <td>
-                  <span class="text-muted small">{{ s.assigned_treks.length }}</span>
-                </td>
-                <td>
-                  <router-link :to="`/admin/staff/${s.id}`" class="btn btn-sm btn-outline-primary me-1"
-                               title="View details">
+                <td class="ps-3 text-secondary">{{ s.id }}</td>
+                <td class="fw-semibold">{{ s.name }}</td>
+                <td class="text-secondary">{{ s.contact }}</td>
+                <td><span class="badge rounded-pill fw-semibold" :class="staffBadge(s.status)">{{ s.status }}</span></td>
+                <td><span class="badge rounded-pill bg-body-secondary">{{ s.assigned_treks.length }}</span></td>
+                <td class="pe-3 text-end text-nowrap">
+                  <router-link :to="`/admin/staff/${s.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">
                     <i class="bi bi-eye"></i>
                   </router-link>
                   <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" @click="handleDelete(s)">
@@ -84,7 +76,12 @@ async function handleDelete(s) {
             </tbody>
           </table>
         </div>
+        <div v-if="!staff.length" class="text-center text-secondary py-5">
+          <i class="bi bi-person-x fs-3 d-block mb-2"></i>
+          <p class="mb-1 fw-semibold text-dark">No staff found</p>
+          <p class="small mb-0">Create a staff account to start assigning treks.</p>
+        </div>
       </div>
     </div>
-  </section>
+  </div>
 </template>

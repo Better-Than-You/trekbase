@@ -32,17 +32,22 @@ class Staff(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     contact = db.Column(db.String)
+    email = db.Column(db.String, unique=True)
     password_hash = db.Column(db.String)
     status = db.Column(db.String, default='available') # available/assigned/not_working
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
             'contact': self.contact,
+            'email': self.email,
             'status': self.status,
         }
 
@@ -56,7 +61,7 @@ class Trek(db.Model):
     duration_days = db.Column(db.Integer, nullable=False)
     available_slots = db.Column(db.Integer, nullable=False)
     assigned_staff_id = db.Column(db.Integer, db.ForeignKey('staff.id'))
-    status = db.Column(db.String, default='pending')  # Pending / Approved / Open / Closed / Completed
+    status = db.Column(db.String, default='pending')  # Open / Closed / Completed (if admin is the one who is creating the treks, the approved and pending is not needed)
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
 

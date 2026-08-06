@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt
 from db.models import db, User, Staff, Trek, Booking
 from datetime import datetime
 import os 
@@ -31,6 +31,8 @@ def booking_with_details(booking):
 @admin_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
 def dashboard():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     bookings = [booking_with_details(b) for b in Booking.query.all()]
     staff = [s.to_dict() for s in Staff.query.all()]
     users = [u.to_dict() for u in User.query.all() if u.email != os.getenv('ADMIN_EMAIL', '')]
@@ -61,6 +63,8 @@ def dashboard():
 @admin_bp.route('/users', methods=['GET'])
 @jwt_required()
 def list_users():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     users = []
     for u in User.query.all():
         if u.email == os.getenv('ADMIN_EMAIL', ''):
@@ -75,6 +79,8 @@ def list_users():
 @admin_bp.route('/users', methods=['POST'])
 @jwt_required()
 def add_user():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     data = request.get_json()
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
@@ -96,6 +102,8 @@ def add_user():
 @admin_bp.route('/staff', methods=['GET'])
 @jwt_required()
 def list_staff():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     staff = []
     for s in Staff.query.all():
         d = s.to_dict()
@@ -107,15 +115,19 @@ def list_staff():
 @admin_bp.route('/staff', methods=['POST'])
 @jwt_required()
 def add_staff():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     data = request.get_json()
     name = (data.get('name') or '').strip()
     contact = (data.get('contact') or '').strip()
+    email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
 
     if not name:
         return jsonify({'error': 'Name is required'}), 400
 
     staff = Staff(name=name, contact=contact, status='available')
+    staff.email = email or None
     if password:
         staff.set_password(password)
     db.session.add(staff)
@@ -126,6 +138,8 @@ def add_staff():
 @admin_bp.route('/users/<int:user_id>', methods=['GET'])
 @jwt_required()
 def user_details(user_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
@@ -139,6 +153,8 @@ def user_details(user_id):
 @admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     user = db.session.get(User, user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
@@ -154,6 +170,8 @@ def delete_user(user_id):
 @admin_bp.route('/staff/<int:staff_id>', methods=['GET'])
 @jwt_required()
 def staff_details(staff_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     staff = db.session.get(Staff, staff_id)
     if not staff:
         return jsonify({'error': 'Staff not found'}), 404
@@ -166,6 +184,8 @@ def staff_details(staff_id):
 @admin_bp.route('/staff/<int:staff_id>', methods=['DELETE'])
 @jwt_required()
 def delete_staff(staff_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     staff = db.session.get(Staff, staff_id)
     if not staff:
         return jsonify({'error': 'Staff not found'}), 404
@@ -179,6 +199,8 @@ def delete_staff(staff_id):
 @admin_bp.route('/treks', methods=['GET'])
 @jwt_required()
 def list_treks():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     treks = []
     for t in Trek.query.all():
         d = t.to_dict()
@@ -192,6 +214,8 @@ def list_treks():
 @admin_bp.route('/treks', methods=['POST'])
 @jwt_required()
 def add_trek():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
     location = (data.get('location') or '').strip()
@@ -224,6 +248,8 @@ def add_trek():
 @admin_bp.route('/treks/<int:trek_id>', methods=['GET'])
 @jwt_required()
 def trek_details(trek_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     trek = db.session.get(Trek, trek_id)
     if not trek:
         return jsonify({'error': 'Trek not found'}), 404
@@ -238,6 +264,8 @@ def trek_details(trek_id):
 @admin_bp.route('/treks/<int:trek_id>', methods=['DELETE'])
 @jwt_required()
 def delete_trek(trek_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
     trek = db.session.get(Trek, trek_id)
     if not trek:
         return jsonify({'error': 'Trek not found'}), 404
