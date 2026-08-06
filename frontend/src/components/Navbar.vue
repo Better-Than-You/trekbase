@@ -37,8 +37,9 @@ function handleLogout() {
   <nav class="navbar navbar-dark bg-dark border-bottom border-secondary sticky-top">
     <div class="container-fluid d-flex align-items-center gap-3 flex-wrap">
       <router-link to="/" class="navbar-brand text-white fw-bold d-inline-flex align-items-center gap-2">
-        <span class="bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-3 p-2">
-          <i class="bi bi-tree"></i>
+        <span class="text-white d-inline-flex align-items-center justify-content-center rounded-3 px-2">
+          <!-- using the ico file for icon -->
+           <img src="/trekbase_logo.ico" alt="TrekBase" class="d-block"/>
         </span>
         TrekBase
       </router-link>
@@ -52,7 +53,14 @@ function handleLogout() {
             </router-link>
           </li>
         </ul>
+
+        
         <div class="d-flex align-items-center gap-2 ms-auto">
+            <!-- add a role indicator here -->
+          <span class="text-white">
+            {{ state.role }}
+          </span>
+
           <button class="btn btn-sm btn-outline-light" @click="handleLogout">
             <i class="bi bi-box-arrow-right me-1"></i>Log out
           </button>

@@ -20,6 +20,7 @@ class User(db.Model):
         return check_password_hash(self.password_hash, password)
 
     def to_dict(self):
+        # safe shape to send to the frontend (never expose the password hash)
         return {
             'id': self.id,
             'email': self.email,
@@ -28,13 +29,14 @@ class User(db.Model):
 
 
 class Staff(db.Model):
+    # staff accounts are created by the admin (they cannot self-register)
     __tablename__ = 'staff'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     contact = db.Column(db.String)
     email = db.Column(db.String, unique=True)
     password_hash = db.Column(db.String)
-    status = db.Column(db.String, default='available') # available/assigned/not_working
+    status = db.Column(db.String, default='available')  # available/assigned/not_available
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -89,11 +91,11 @@ class Booking(db.Model):
     status = db.Column(db.String, default='booked')  # booked/cancelled/completed
 
     def to_dict(self):
+        # safe shape to send to the frontend
         return {
             'id': self.id,
             'user_id': self.user_id,
             'trek_id': self.trek_id,
             'booking_date': str(self.booking_date),
             'status': self.status,
-            'payment_status': self.payment_status,
         }

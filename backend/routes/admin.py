@@ -6,7 +6,7 @@ import os
 
 admin_bp = Blueprint('admin', __name__)
 
-# helper to parse date string into a date object
+# helper to parse a 'YYYY-MM-DD' string into a date object (None if invalid/empty)
 def parse_date(s):
     if not s:
         return None
@@ -15,7 +15,8 @@ def parse_date(s):
     except (ValueError, TypeError):
         return None
 
-# helper function to format the booking details and give custom object
+
+# helper to serialize a booking with its related trek and user objects
 def booking_with_details(booking):
     trek = db.session.get(Trek, booking.trek_id)
     user = db.session.get(User, booking.user_id)
@@ -28,6 +29,15 @@ def booking_with_details(booking):
     }
 
 
+# helper to serialize a trek with its assigned staff and booking count
+def serialize_trek(trek):
+    d = trek.to_dict()
+    staff = db.session.get(Staff, trek.assigned_staff_id)
+    d['assigned_staff'] = staff.to_dict() if staff else None
+    d['bookings_count'] = Booking.query.filter_by(trek_id=trek.id).count()
+    return d
+
+
 @admin_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
 def dashboard():
@@ -36,15 +46,9 @@ def dashboard():
     bookings = [booking_with_details(b) for b in Booking.query.all()]
     staff = [s.to_dict() for s in Staff.query.all()]
     users = [u.to_dict() for u in User.query.all() if u.email != os.getenv('ADMIN_EMAIL', '')]
+    treks = [serialize_trek(t) for t in Trek.query.all()]
 
-    treks = []
-    for t in Trek.query.all():
-        d = t.to_dict()
-        staff_obj = db.session.get(Staff, t.assigned_staff_id)
-        d['assigned_staff'] = staff_obj.to_dict() if staff_obj else None
-        d['bookings_count'] = Booking.query.filter_by(trek_id=t.id).count()
-        treks.append(d)
-
+    # everything in one payload, plus summary counts for the stat cards
     return jsonify({
         'counts': {
             'bookings': len(bookings),
@@ -56,8 +60,7 @@ def dashboard():
         'staff': staff,
         'users': users,
         'treks': treks,
-    }), 200 
-    # working verified with postman
+    }), 200
 
 
 @admin_bp.route('/users', methods=['GET'])
@@ -150,6 +153,37 @@ def user_details(user_id):
     return jsonify({'user': d}), 200
 
 
+@admin_bp.route('/users/<int:user_id>', methods=['PUT'])
+@jwt_required()
+def edit_user(user_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+
+    if not name or not email:
+        return jsonify({'error': 'Name and email are required'}), 400
+
+    existing = User.query.filter(User.email == email, User.id != user_id).first()
+    if existing:
+        return jsonify({'error': 'Email already registered'}), 409
+
+    user.name = name
+    user.email = email
+    if password:
+        if len(password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+        user.set_password(password)
+    db.session.commit()
+    return jsonify({'message': 'User updated', 'user': user.to_dict()}), 200
+
+
 @admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
@@ -181,6 +215,45 @@ def staff_details(staff_id):
     return jsonify({'staff': d}), 200
 
 
+@admin_bp.route('/staff/<int:staff_id>', methods=['PUT'])
+@jwt_required()
+def edit_staff(staff_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    staff = db.session.get(Staff, staff_id)
+    if not staff:
+        return jsonify({'error': 'Staff not found'}), 404
+
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    contact = (data.get('contact') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    password = data.get('password') or ''
+    status = (data.get('status') or '').strip()
+
+    if not name:
+        return jsonify({'error': 'Name is required'}), 400
+    if status and status not in ('available', 'assigned', 'not_available'):
+        return jsonify({'error': 'Status must be available, assigned or not_available'}), 400
+
+    if email:
+        existing = Staff.query.filter(Staff.email == email, Staff.id != staff_id).first()
+        if existing:
+            return jsonify({'error': 'Email already registered'}), 409
+
+    staff.name = name
+    staff.contact = contact or None
+    staff.email = email or None
+    if status:
+        staff.status = status
+    if password:
+        if len(password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+        staff.set_password(password)
+    db.session.commit()
+    return jsonify({'message': 'Staff updated', 'staff': staff.to_dict()}), 200
+
+
 @admin_bp.route('/staff/<int:staff_id>', methods=['DELETE'])
 @jwt_required()
 def delete_staff(staff_id):
@@ -201,13 +274,7 @@ def delete_staff(staff_id):
 def list_treks():
     if get_jwt().get('role') != 'admin':
         return jsonify({'error': 'Forbidden'}), 403
-    treks = []
-    for t in Trek.query.all():
-        d = t.to_dict()
-        staff = db.session.get(Staff, t.assigned_staff_id)
-        d['assigned_staff'] = staff.to_dict() if staff else None
-        d['bookings_count'] = Booking.query.filter_by(trek_id=t.id).count()
-        treks.append(d)
+    treks = [serialize_trek(t) for t in Trek.query.all()]
     return jsonify({'treks': treks}), 200
 
 
@@ -254,11 +321,44 @@ def trek_details(trek_id):
     if not trek:
         return jsonify({'error': 'Trek not found'}), 404
 
-    d = trek.to_dict()
-    staff = db.session.get(Staff, trek.assigned_staff_id)
-    d['assigned_staff'] = staff.to_dict() if staff else None
+    d = serialize_trek(trek)
     d['bookings'] = [booking_with_details(b) for b in Booking.query.filter_by(trek_id=trek.id).all()]
     return jsonify({'trek': d}), 200
+
+
+@admin_bp.route('/treks/<int:trek_id>', methods=['PUT'])
+@jwt_required()
+def edit_trek(trek_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    trek = db.session.get(Trek, trek_id)
+    if not trek:
+        return jsonify({'error': 'Trek not found'}), 404
+
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    location = (data.get('location') or '').strip()
+    difficulty = (data.get('difficulty') or '').strip()
+    status = (data.get('status') or '').strip()
+
+    if not name or not location or not difficulty:
+        return jsonify({'error': 'Name, location and difficulty are required'}), 400
+    if difficulty not in ('easy', 'moderate', 'hard'):
+        return jsonify({'error': 'Difficulty must be easy, moderate or hard'}), 400
+    if status not in ('pending', 'approved', 'open', 'closed', 'completed'):
+        return jsonify({'error': 'Invalid trek status'}), 400
+
+    trek.name = name
+    trek.location = location
+    trek.difficulty = difficulty
+    trek.duration_days = int(data.get('duration_days') or 0)
+    trek.available_slots = int(data.get('available_slots') or 0)
+    trek.assigned_staff_id = data.get('assigned_staff_id') or None
+    trek.status = status
+    trek.start_date = parse_date(data.get('start_date'))
+    trek.end_date = parse_date(data.get('end_date'))
+    db.session.commit()
+    return jsonify({'message': 'Trek updated', 'trek': trek.to_dict()}), 200
 
 
 @admin_bp.route('/treks/<int:trek_id>', methods=['DELETE'])

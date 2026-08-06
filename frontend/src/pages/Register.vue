@@ -4,23 +4,27 @@ import { useRouter } from 'vue-router'
 import { register } from '@/lib/api'
 import { setAuth } from '@/store/auth'
 
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
+
 const router = useRouter()
 
 const name = ref('')
 const email = ref('')
 const password = ref('')
-const confirmPassword = ref('')
 
 async function handleSubmit() {
-  if (password.value !== confirmPassword.value) {
-    confirmPassword.value = ''
-    return
-  }
-
   try {    const data = await register(name.value, email.value, password.value)
     setAuth(data.user, data.access_token)
     router.push('/user/dashboard')
-  } catch {
+  } catch (e) {
+    // handle errors like, showing a toast notification for invalid credentials, etc.
+    // console.log(e);
+    toast.error(e, {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    });
   }
 }
 </script>
@@ -31,8 +35,10 @@ async function handleSubmit() {
       <div class="col-md-7 col-lg-5">
 
         <div class="text-center mb-4">
-          <span class="bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-3 p-2 mb-2">
-            <i class="bi bi-mountain"></i>
+          <span class="text-white d-inline-flex align-items-center justify-content-center rounded-3 p-2 mb-2">
+            <!-- <i class="bi bi-mountain"></i> -->
+            <img src="/trekbase_logo.png" alt="TrekBase" class="d-block" style="width: 50px; height: 50px;" />
+
           </span>
           <h5 class="fw-semibold mb-1">Create your trekker account</h5>
           <p class="text-secondary small mb-0">Register to browse and book treks</p>

@@ -60,12 +60,26 @@ export function getUserDetail(userId) {
   return request(`/admin/users/${userId}`)
 }
 
+export function updateUser(userId, payload) {
+  return request(`/admin/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}
+
 export function deleteUser(userId) {
   return request(`/admin/users/${userId}`, { method: 'DELETE' })
 }
 
 export function getStaffDetail(staffId) {
   return request(`/admin/staff/${staffId}`)
+}
+
+export function updateStaff(staffId, payload) {
+  return request(`/admin/staff/${staffId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
 }
 
 export function deleteStaff(staffId) {
@@ -85,6 +99,13 @@ export function addTrek(payload) {
 
 export function getTrekDetail(trekId) {
   return request(`/admin/treks/${trekId}`)
+}
+
+export function updateTrek(trekId, payload) {
+  return request(`/admin/treks/${trekId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
 }
 
 export function deleteTrek(trekId) {
@@ -115,10 +136,10 @@ export function cancelBooking(bookingId) {
   return request(`/user/bookings/${bookingId}`, { method: 'DELETE' })
 }
 
-export function updateProfile(name, password) {
+export function updateProfile(name) {
   return request('/user/profile', {
     method: 'PUT',
-    body: JSON.stringify({ name, password }),
+    body: JSON.stringify({ name }),
   })
 }
 

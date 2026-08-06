@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAdminStaff, deleteStaff } from '@/lib/api'
+import { staffBadge } from '@/lib/badges'
 
 const router = useRouter()
 
@@ -15,10 +16,6 @@ onMounted(async () => {
     staff.value = []
   }
 })
-
-function staffBadge(s) {
-  return ({ available: 'bg-success', assigned: 'bg-primary', not_working: 'bg-secondary' })[s] || 'bg-secondary'
-}
 
 async function handleDelete(s) {
   if (!confirm(`Delete staff ${s.name}?`)) return
@@ -63,7 +60,7 @@ async function handleDelete(s) {
                 <td class="fw-semibold">{{ s.name }}</td>
                 <td class="text-secondary">{{ s.contact }}</td>
                 <td><span class="badge rounded-pill fw-semibold" :class="staffBadge(s.status)">{{ s.status }}</span></td>
-                <td><span class="badge rounded-pill bg-body-secondary">{{ s.assigned_treks.length }}</span></td>
+                <td><span class="badge rounded-pill bg-secondary text-white">{{ s.assigned_treks.length }}</span></td>
                 <td class="pe-3 text-end text-nowrap">
                   <router-link :to="`/admin/staff/${s.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">
                     <i class="bi bi-eye"></i>

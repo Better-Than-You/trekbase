@@ -4,6 +4,9 @@ import { useRouter } from 'vue-router'
 import { login } from '@/lib/api'
 import { setAuth } from '@/store/auth'
 
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
 const router = useRouter()
 
 const email = ref('')
@@ -16,7 +19,13 @@ async function handleSubmit() {
     if (data.user.role === 'admin') router.push('/admin/dashboard')
     else if (data.user.role === 'staff') router.push('/staff/dashboard')
     else router.push('/user/dashboard')
-  } catch {
+  } catch (e) {
+    // handle errors like, showing a toast notification for invalid credentials, etc.
+    // console.log(e);
+    toast.error(e, {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    });
   }
 }
 </script>
@@ -27,8 +36,10 @@ async function handleSubmit() {
       <div class="col-md-7 col-lg-5">
 
         <div class="text-center mb-4">
-          <span class="bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-3 p-2 mb-2">
-            <i class="bi bi-mountain"></i>
+          <span class="text-white d-inline-flex align-items-center justify-content-center rounded-3 p-2 mb-2">
+            <!-- <i class="bi bi-mountain"></i> -->
+            <img src="/trekbase_logo.png" alt="TrekBase" class="d-block" style="width: 50px; height: 50px;" />
+
           </span>
           <h4 class="fw-bold mb-1">TrekBase</h4>
           <p class="text-secondary small mb-0">Sign in to continue</p>
@@ -52,7 +63,7 @@ async function handleSubmit() {
 
             <p class="text-center mt-3 mb-0 small">
               No account?
-              <router-link to="/auth/register" class="fw-semibold text-decoration-none">Register as User (Trekker)</router-link>
+              <router-link to="/auth/register" class="fw-semibold text-decoration-none">Register now</router-link>
             </p>
 
           </div>

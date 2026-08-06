@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { Home, Login, Register } from '@/pages/auth'
 import NotFound from '@/pages/NotFound.vue'
-import { AdminDashboard, AddUser, AddStaff, AddTrek, Userlist, Stafflist, Treklist, UserDetails, StaffDetails, TrekDetails } from '@/pages/admin'
+import { AdminDashboard, AddUser, AddStaff, AddTrek, Userlist, Stafflist, Treklist, UserDetails, StaffDetails, TrekDetails, EditUser, EditStaff, EditTrek } from '@/pages/admin'
 import { UserDashboard, BookingHistory, EditProfile } from '@/pages/user'
 import { StaffDashboard } from '@/pages/staff'
 import { state } from '@/store/auth'
@@ -23,13 +23,16 @@ const routes = [
   { path: '/admin/dashboard', component: AdminDashboard, name: 'admin_dashboard', meta: { requiresRole: 'admin' } },
   { path: '/admin/users', component: Userlist, name: 'userlist', meta: { requiresRole: 'admin' } },
   { path: '/admin/users/:id', component: UserDetails, name: 'admin_user_details', meta: { requiresRole: 'admin' } },
+  { path: '/admin/users/:id/edit', component: EditUser, name: 'admin_edit_user', meta: { requiresRole: 'admin' } },
   { path: '/admin/user/add', component: AddUser, name: 'admin_add_user', meta: { requiresRole: 'admin' } },
   { path: '/admin/staff', component: Stafflist, name: 'stafflist', meta: { requiresRole: 'admin' } },
   { path: '/admin/staff/:id', component: StaffDetails, name: 'admin_staff_details', meta: { requiresRole: 'admin' } },
+  { path: '/admin/staff/:id/edit', component: EditStaff, name: 'admin_edit_staff', meta: { requiresRole: 'admin' } },
   { path: '/admin/staff/add', component: AddStaff, name: 'admin_add_staff', meta: { requiresRole: 'admin' } },
   { path: '/admin/treks', component: Treklist, name: 'treklist', meta: { requiresRole: 'admin' } },
   { path: '/admin/treks/add', component: AddTrek, name: 'admin_add_trek', meta: { requiresRole: 'admin' } },
   { path: '/admin/treks/:id', component: TrekDetails, name: 'admin_trek_details', meta: { requiresRole: 'admin' } },
+  { path: '/admin/treks/:id/edit', component: EditTrek, name: 'admin_edit_trek', meta: { requiresRole: 'admin' } },
 
   { path: '/:pathMatch(.*)*', component: NotFound, name: 'not_found' },
 ]

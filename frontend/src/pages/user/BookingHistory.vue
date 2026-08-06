@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMyBookings } from '@/lib/api'
+import { difficultyBadge, bookingBadge } from '@/lib/badges'
 
 const router = useRouter()
 
@@ -16,13 +17,6 @@ onMounted(async () => {
   }
 })
 
-function difficultyBadge(d) {
-  return ({ easy: 'bg-success', moderate: 'bg-warning text-dark', hard: 'bg-danger' })[d] || 'bg-secondary'
-}
-
-function bookingBadge(s) {
-  return ({ booked: 'bg-primary', cancelled: 'bg-danger', completed: 'bg-success' })[s] || 'bg-secondary'
-}
 </script>
 
 <template>

@@ -31,7 +31,7 @@ async function handleDelete(u) {
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h4 class="fw-bold text-uppercase mb-0" style="letter-spacing: 0.04em;">Users (Trekkers)</h4>
+        <h4 class="fw-bold text-uppercase mb-0" style="letter-spacing: 0.04em;">Users</h4>
         <p class="text-secondary small mb-0">Everyone who has registered to book treks</p>
       </div>
       <button @click="router.push('/admin/user/add')" class="btn btn-primary">
@@ -58,7 +58,7 @@ async function handleDelete(u) {
                 <td class="ps-3 text-secondary">{{ u.id }}</td>
                 <td class="fw-semibold">{{ u.name }}</td>
                 <td class="text-secondary">{{ u.email }}</td>
-                <td><span class="badge rounded-pill bg-body-secondary">{{ u.bookings_count }}</span></td>
+                <td><span class="badge rounded-pill bg-secondary text-white">{{ u.bookings_count }}</span></td>
                 <td class="text-secondary">{{ u.created_at || '-' }}</td>
                 <td class="pe-3 text-end text-nowrap">
                   <router-link :to="`/admin/users/${u.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">

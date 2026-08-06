@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getUserDetail } from '@/lib/api'
+import { bookingBadge } from '@/lib/badges'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,10 +17,6 @@ onMounted(async () => {
     user.value = null
   }
 })
-
-function bookingBadge(s) {
-  return ({ booked: 'bg-primary', cancelled: 'bg-danger', completed: 'bg-success' })[s] || 'bg-secondary'
-}
 </script>
 
 <template>
@@ -31,6 +28,11 @@ function bookingBadge(s) {
     <h4 class="fw-bold text-uppercase mb-4" style="letter-spacing: 0.04em;">User Details</h4>
 
     <template v-if="user">
+      <div class="d-flex justify-content-end mb-3">
+        <button @click="router.push(`/admin/users/${user.id}/edit`)" class="btn btn-primary btn-sm">
+          <i class="bi bi-pencil me-1"></i>Edit
+        </button>
+      </div>
       <div class="card shadow-sm mb-4">
         <div class="card-body">
           <div class="row g-3">
@@ -48,7 +50,7 @@ function bookingBadge(s) {
             </div>
             <div class="col-md-6">
               <small class="text-secondary text-uppercase small">Total Bookings</small>
-              <p class="mb-0"><span class="badge rounded-pill bg-body-secondary">{{ user.bookings.length }}</span></p>
+              <p class="mb-0"><span class="badge rounded-pill bg-secondary text-white">{{ user.bookings.length }}</span></p>
             </div>
           </div>
         </div>

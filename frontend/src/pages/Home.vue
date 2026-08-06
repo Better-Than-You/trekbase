@@ -12,8 +12,10 @@ function go() {
 <template>
   <section class="bg-dark text-white min-vh-100 d-flex align-items-center justify-content-center">
     <div class="text-center px-3">
-      <span class="bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-3 p-3 mb-3">
-        <i class="bi bi-mountain fs-3"></i>
+      <span class="text-white d-inline-flex align-items-center justify-content-center rounded-3 mb-3">
+        <!-- <i class="bi bi-mountain fs-3"></i> -->
+        <img src="/trekbase_logo.png" alt="TrekBase" class="d-block" style="width: 128px; height: 128px;" />
+
       </span>
       <h1 class="display-3 fw-bold mb-2">TrekBase</h1>
       <p class="lead mb-4 opacity-75">Plan it. Staff it. Trek it. One place to manage trek routes, assign staff and take bookings.</p>

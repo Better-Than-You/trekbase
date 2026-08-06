@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getUserDashboard, searchTreks, bookTrek, cancelBooking } from '@/lib/api'
 import { state } from '@/store/auth'
+import { difficultyBadge, statusBadge, bookingBadge } from '@/lib/badges'
 
 const router = useRouter()
 
@@ -61,20 +62,13 @@ async function handleCancel(bookingId) {
   }
 }
 
-function difficultyBadge(d) {
-  return ({ easy: 'bg-success', moderate: 'bg-warning text-dark', hard: 'bg-danger' })[d] || 'bg-secondary'
+// format a db datetime string to dd-mm-yyyy hh:mm AM/PM
+function formatDateTime(dt) {
+  const d = new Date(dt)
+  const options = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }
+  return d.toLocaleString('en-US', options).replace(',', '')
 }
 
-function bookingBadge(s) {
-  return ({ booked: 'bg-primary', cancelled: 'bg-danger', completed: 'bg-success' })[s] || 'bg-secondary'
-}
-
-function statusBadge(s) {
-  return ({
-    pending: 'bg-secondary', approved: 'bg-info text-dark', open: 'bg-success',
-    closed: 'bg-secondary', completed: 'bg-primary',
-  })[s] || 'bg-secondary'
-}
 </script>
 
 <template>
@@ -90,7 +84,7 @@ function statusBadge(s) {
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-4">
+        <div class="col-6 col-lg-6">
           <div class="card shadow-sm h-100">
             <div class="card-body d-flex align-items-center gap-3">
               <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-3 bg-success text-white">
@@ -103,7 +97,7 @@ function statusBadge(s) {
             </div>
           </div>
         </div>
-        <div class="col-6 col-lg-4">
+        <div class="col-6 col-lg-6">
           <div class="card shadow-sm h-100">
             <div class="card-body d-flex align-items-center gap-3">
               <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-3 bg-primary text-white">
@@ -113,15 +107,6 @@ function statusBadge(s) {
                 <div class="text-secondary text-uppercase small fw-semibold">Active bookings</div>
                 <div class="h3 mb-0 fw-bold">{{ bookings.filter(b => b.status === 'booked').length }}</div>
               </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-12 col-lg-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column justify-content-center">
-              <p class="text-secondary text-uppercase small fw-semibold mb-1">Signed in as</p>
-              <div class="fw-bold">{{ state.user?.name }}</div>
-              <div class="text-secondary small">{{ state.user?.email }}</div>
             </div>
           </div>
         </div>
@@ -203,7 +188,7 @@ function statusBadge(s) {
                   <td class="fw-semibold">{{ b.trek?.name || '-' }}</td>
                   <td class="text-secondary">{{ b.trek?.location || '-' }}</td>
                   <td><span class="badge rounded-pill fw-semibold" :class="bookingBadge(b.status)">{{ b.status }}</span></td>
-                  <td class="text-secondary">{{ b.booking_date }}</td>
+                  <td class="text-secondary">{{ formatDateTime(b.booking_date) }}</td>
                   <td class="pe-3 text-end">
                     <button v-if="b.status === 'booked'" class="btn btn-sm btn-outline-danger" @click="handleCancel(b.id)">
                       <i class="bi bi-x-circle me-1"></i>Cancel

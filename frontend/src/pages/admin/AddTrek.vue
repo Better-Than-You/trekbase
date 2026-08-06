@@ -1,10 +1,16 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+// vue basics: reactive state, lifecycle hook and watchers
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { addTrek, getAdminStaff } from '@/lib/api'
 
+// toast notifications
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
 const router = useRouter()
 
+// form fields
 const name = ref('')
 const location = ref('')
 const difficulty = ref('moderate')
@@ -14,8 +20,10 @@ const status = ref('pending')
 const startDate = ref('')
 const endDate = ref('')
 const assignedStaffId = ref('')
+// staff dropdown options
 const staffOptions = ref([])
 
+// load the list of staff for the "assigned staff" dropdown
 onMounted(async () => {
   try {
     const data = await getAdminStaff()
@@ -25,6 +33,18 @@ onMounted(async () => {
   }
 })
 
+// auto-fill end date = start date + duration (days) whenever either changes
+function autoFillEndDate() {
+  if (startDate.value && durationDays.value) {
+    const end = new Date(startDate.value)
+    end.setDate(end.getDate() + Number(durationDays.value))
+    endDate.value = end.toISOString().slice(0, 10)
+  }
+}
+// watch hook from react
+watch([startDate, durationDays], autoFillEndDate)
+
+// send the new trek to the backend
 async function handleSubmit() {
   try {
     await addTrek({
@@ -38,20 +58,22 @@ async function handleSubmit() {
       end_date: endDate.value,
       assigned_staff_id: assignedStaffId.value || null,
     })
-    name.value = ''
-    location.value = ''
-    durationDays.value = ''
-    availableSlots.value = ''
-    startDate.value = ''
-    endDate.value = ''
-    assignedStaffId.value = ''
-  } catch {
+    toast.success('Trek added successfully', {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    })
+    router.push('/admin/dashboard')
+  } catch (e) {
+    toast.error(e, {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    })
   }
 }
 </script>
 
 <template>
-  <div class="container py-4">
+  <div class="container pt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h4 class="fw-bold text-uppercase mb-0" style="letter-spacing: 0.04em;">Add Trek</h4>
@@ -61,8 +83,10 @@ async function handleSubmit() {
         <i class="bi bi-arrow-left me-1"></i>Back
       </button>
     </div>
-
-    <div class="card shadow-sm" style="max-width: 760px;">
+    </div>
+    
+    <div class="container pb-4 d-flex justify-content-center pt-2">
+    <div class="card shadow-sm d-flex justify-content-center w-50" >
       <div class="card-body p-4">
         <form @submit.prevent="handleSubmit">
           <div class="row">

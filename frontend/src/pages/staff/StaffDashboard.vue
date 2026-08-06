@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { getStaffDashboard, getStaffTrek, updateStaffTrek } from '@/lib/api'
 import { state } from '@/store/auth'
+import { statusBadge, bookingBadge } from '@/lib/badges'
 
 const treks = ref([])
 
@@ -20,17 +21,6 @@ onMounted(async () => {
     treks.value = []
   }
 })
-
-function statusBadge(s) {
-  return ({
-    pending: 'bg-secondary', approved: 'bg-info text-dark', open: 'bg-success',
-    closed: 'bg-secondary', completed: 'bg-primary',
-  })[s] || 'bg-secondary'
-}
-
-function bookingBadge(s) {
-  return ({ booked: 'bg-primary', cancelled: 'bg-danger', completed: 'bg-success' })[s] || 'bg-secondary'
-}
 
 function openEdit(t) {
   editing.value = t
@@ -126,8 +116,8 @@ async function viewParticipants(t) {
               <span class="text-secondary small">{{ t.location }} &middot; {{ t.duration_days }} days</span>
               <div class="mt-2 d-flex gap-2 flex-wrap">
                 <span class="badge rounded-pill fw-semibold" :class="statusBadge(t.status)">{{ t.status }}</span>
-                <span class="badge rounded-pill bg-body-secondary">{{ t.available_slots }} slots</span>
-                <span class="badge rounded-pill bg-body-secondary">{{ t.participants_count }} registered</span>
+                <span class="badge rounded-pill bg-secondary text-white">{{ t.available_slots }} slots</span>
+                <span class="badge rounded-pill bg-secondary text-white">{{ t.participants_count }} registered</span>
               </div>
             </div>
             <div class="d-flex gap-2">

@@ -6,6 +6,7 @@ from datetime import datetime
 user_bp = Blueprint('user', __name__)
 
 
+# helper to serialize a booking with its trek
 def booking_with_trek(booking):
     trek = db.session.get(Trek, booking.trek_id)
     return {
@@ -19,9 +20,11 @@ def booking_with_trek(booking):
 @user_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
 def dashboard():
+    # only trekkers can use the dashboard
     if get_jwt().get('role') != 'user':
         return jsonify({'error': 'Forbidden'}), 403
     user_id = int(get_jwt_identity())
+    # open treks they can book, plus the treks they already booked
     available = [t.to_dict() for t in Trek.query.filter_by(status='open').all()]
     bookings = [booking_with_trek(b) for b in Booking.query.filter_by(user_id=user_id).all()]
     return jsonify({
@@ -37,6 +40,7 @@ def treks():
         return jsonify({'error': 'Forbidden'}), 403
     q = (request.args.get('q') or '').strip().lower()
     query = Trek.query.filter_by(status='open')
+    # optional search filters open treks by name or location
     if q:
         query = query.filter(Trek.name.ilike(f'%{q}%') | Trek.location.ilike(f'%{q}%'))
     return jsonify({'treks': [t.to_dict() for t in query.all()]}), 200
@@ -61,6 +65,7 @@ def book_trek():
     data = request.get_json() or {}
     trek_id = data.get('trek_id')
 
+    # sanity checks before letting the booking go through
     trek = db.session.get(Trek, trek_id)
     if not trek:
         return jsonify({'error': 'Trek not found'}), 404
@@ -71,6 +76,7 @@ def book_trek():
     if Booking.query.filter_by(user_id=user_id, trek_id=trek.id, status='booked').first():
         return jsonify({'error': 'You already booked this trek'}), 400
 
+    # create the booking and free up one slot
     booking = Booking(user_id=user_id, trek_id=trek.id, booking_date=datetime.utcnow(), status='booked')
     trek.available_slots -= 1
     db.session.add(booking)
@@ -84,12 +90,14 @@ def cancel_booking(booking_id):
     if get_jwt().get('role') != 'user':
         return jsonify({'error': 'Forbidden'}), 403
     user_id = int(get_jwt_identity())
+    # a user can only cancel their own, still-active booking
     booking = db.session.get(Booking, booking_id)
     if not booking or booking.user_id != user_id:
         return jsonify({'error': 'Booking not found'}), 404
     if booking.status == 'cancelled':
         return jsonify({'error': 'Booking already cancelled'}), 400
 
+    # mark as cancelled and give the slot back to the trek
     booking.status = 'cancelled'
     trek = db.session.get(Trek, booking.trek_id)
     if trek:
@@ -108,13 +116,12 @@ def update_profile():
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
+    # currently only the name is editable (email is not changeable)
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
-    password = data.get('password') or ''
 
     if name:
         user.name = name
-    if password:
-        user.set_password(password)
+
     db.session.commit()
     return jsonify({'message': 'Profile updated', 'user': user.to_dict()}), 200

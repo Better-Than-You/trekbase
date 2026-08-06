@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getAdminDashboard, deleteUser, deleteStaff, deleteTrek } from '@/lib/api'
+import { difficultyBadge, statusBadge, bookingBadge, staffBadge } from '@/lib/badges'
 
 const data = ref({
   counts: { bookings: 0, treks: 0, staff: 0, users: 0 },
@@ -16,27 +17,6 @@ onMounted(async () => {
   } catch {
   }
 })
-
-function difficultyBadge(d) {
-  return ({
-    easy: 'bg-success', moderate: 'bg-warning text-dark', hard: 'bg-danger',
-  })[d] || 'bg-secondary'
-}
-
-function statusBadge(s) {
-  return ({
-    pending: 'bg-secondary', approved: 'bg-info text-dark', open: 'bg-success',
-    closed: 'bg-secondary', completed: 'bg-primary',
-  })[s] || 'bg-secondary'
-}
-
-function bookingBadge(s) {
-  return ({ booked: 'bg-primary', cancelled: 'bg-danger', completed: 'bg-success' })[s] || 'bg-secondary'
-}
-
-function staffBadge(s) {
-  return ({ available: 'bg-success', assigned: 'bg-primary', not_working: 'bg-secondary' })[s] || 'bg-secondary'
-}
 
 async function handleDeleteTrek(t) {
   if (!confirm(`Delete trek ${t.name}?`)) return
@@ -169,6 +149,9 @@ async function handleDeleteStaff(s) {
                     <router-link :to="`/admin/treks/${t.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">
                       <i class="bi bi-eye"></i>
                     </router-link>
+                        <router-link :to="`/admin/treks/${t.id}/edit`" class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                          <i class="bi bi-pencil-square"></i>
+                        </router-link>
                     <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" @click="handleDeleteTrek(t)">
                       <i class="bi bi-trash"></i>
                     </button>
@@ -252,6 +235,9 @@ async function handleDeleteStaff(s) {
                         <router-link :to="`/admin/staff/${s.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">
                           <i class="bi bi-eye"></i>
                         </router-link>
+                        <router-link :to="`/admin/staff/${s.id}/edit`" class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                          <i class="bi bi-pencil-square"></i>
+                        </router-link>
                         <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" @click="handleDeleteStaff(s)">
                           <i class="bi bi-trash"></i>
                         </button>
@@ -270,7 +256,7 @@ async function handleDeleteStaff(s) {
         <div class="col-lg-6">
           <div class="card shadow-sm h-100">
             <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
-              <h6 class="mb-0 fw-bold">Users (Trekkers)</h6>
+              <h6 class="mb-0 fw-bold">Users</h6>
               <router-link to="/admin/user/add" class="btn btn-sm btn-primary">
                 <i class="bi bi-plus-lg me-1"></i>Add User
               </router-link>
@@ -294,6 +280,9 @@ async function handleDeleteStaff(s) {
                       <td class="pe-3 text-end text-nowrap">
                         <router-link :to="`/admin/users/${u.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">
                           <i class="bi bi-eye"></i>
+                        </router-link>
+                        <router-link :to="`/admin/users/${u.id}/edit`" class="btn btn-sm btn-outline-secondary me-1" title="Edit">
+                          <i class="bi bi-pencil-square"></i>
                         </router-link>
                         <button type="button" class="btn btn-sm btn-outline-danger" title="Delete" @click="handleDeleteUser(u)">
                           <i class="bi bi-trash"></i>

@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAdminTreks, deleteTrek } from '@/lib/api'
+import { difficultyBadge, statusBadge } from '@/lib/badges'
 
 const router = useRouter()
 
@@ -15,17 +16,6 @@ onMounted(async () => {
     treks.value = []
   }
 })
-
-function difficultyBadge(d) {
-  return ({ easy: 'bg-success', moderate: 'bg-warning text-dark', hard: 'bg-danger' })[d] || 'bg-secondary'
-}
-
-function statusBadge(s) {
-  return ({
-    pending: 'bg-secondary', approved: 'bg-info text-dark', open: 'bg-success',
-    closed: 'bg-secondary', completed: 'bg-primary',
-  })[s] || 'bg-secondary'
-}
 
 async function handleDelete(t) {
   if (!confirm(`Delete trek ${t.name}?`)) return
@@ -75,7 +65,7 @@ async function handleDelete(t) {
                 <td><span class="badge rounded-pill fw-semibold" :class="difficultyBadge(t.difficulty)">{{ t.difficulty }}</span></td>
                 <td>{{ t.available_slots }}</td>
                 <td>{{ t.assigned_staff ? t.assigned_staff.name : 'Not assigned' }}</td>
-                <td><span class="badge rounded-pill bg-body-secondary">{{ t.bookings_count }}</span></td>
+                <td><span class="badge rounded-pill bg-secondary text-white">{{ t.bookings_count }}</span></td>
                 <td><span class="badge rounded-pill fw-semibold" :class="statusBadge(t.status)">{{ t.status }}</span></td>
                 <td class="pe-3 text-end text-nowrap">
                   <router-link :to="`/admin/treks/${t.id}`" class="btn btn-sm btn-outline-primary me-1" title="View details">

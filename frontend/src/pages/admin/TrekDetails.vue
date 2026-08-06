@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTrekDetail } from '@/lib/api'
+import { difficultyBadge, statusBadge, bookingBadge } from '@/lib/badges'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,21 +17,6 @@ onMounted(async () => {
     trek.value = null
   }
 })
-
-function difficultyBadge(d) {
-  return ({ easy: 'bg-success', moderate: 'bg-warning text-dark', hard: 'bg-danger' })[d] || 'bg-secondary'
-}
-
-function statusBadge(s) {
-  return ({
-    pending: 'bg-secondary', approved: 'bg-info text-dark', open: 'bg-success',
-    closed: 'bg-secondary', completed: 'bg-primary',
-  })[s] || 'bg-secondary'
-}
-
-function bookingBadge(s) {
-  return ({ booked: 'bg-primary', cancelled: 'bg-danger', completed: 'bg-success' })[s] || 'bg-secondary'
-}
 </script>
 
 <template>
@@ -42,6 +28,11 @@ function bookingBadge(s) {
     <h4 class="fw-bold text-uppercase mb-4" style="letter-spacing: 0.04em;">Trek Details</h4>
 
     <template v-if="trek">
+      <div class="d-flex justify-content-end mb-3">
+        <button @click="router.push(`/admin/treks/${trek.id}/edit`)" class="btn btn-primary btn-sm">
+          <i class="bi bi-pencil me-1"></i>Edit
+        </button>
+      </div>
       <div class="card shadow-sm mb-4">
         <div class="card-body">
           <div class="row g-3">

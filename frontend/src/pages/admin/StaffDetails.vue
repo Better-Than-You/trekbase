@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getStaffDetail } from '@/lib/api'
+import { staffBadge } from '@/lib/badges'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,10 +17,6 @@ onMounted(async () => {
     staff.value = null
   }
 })
-
-function staffBadge(s) {
-  return ({ available: 'bg-success', assigned: 'bg-primary', not_working: 'bg-secondary' })[s] || 'bg-secondary'
-}
 </script>
 
 <template>
@@ -31,6 +28,11 @@ function staffBadge(s) {
     <h4 class="fw-bold text-uppercase mb-4" style="letter-spacing: 0.04em;">Staff Details</h4>
 
     <template v-if="staff">
+      <div class="d-flex justify-content-end mb-3">
+        <button @click="router.push(`/admin/staff/${staff.id}/edit`)" class="btn btn-primary btn-sm">
+          <i class="bi bi-pencil me-1"></i>Edit
+        </button>
+      </div>
       <div class="card shadow-sm mb-4">
         <div class="card-body">
           <div class="row g-3">
@@ -48,7 +50,7 @@ function staffBadge(s) {
             </div>
             <div class="col-md-6">
               <small class="text-secondary text-uppercase small">Assigned Treks</small>
-              <p class="mb-0"><span class="badge rounded-pill bg-body-secondary">{{ staff.assigned_treks.length }}</span></p>
+              <p class="mb-0"><span class="badge rounded-pill bg-secondary text-white">{{ staff.assigned_treks.length }}</span></p>
             </div>
           </div>
         </div>

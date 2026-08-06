@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { addUser } from '@/lib/api'
 
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
+
 const router = useRouter()
 
 const name = ref('')
@@ -15,7 +18,18 @@ async function handleSubmit() {
     name.value = ''
     email.value = ''
     password.value = ''
-  } catch {
+  toast.success('Staff account created successfully', {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    });
+    router.push('/admin/dashboard');
+  } catch (e) {
+    // handle errors like, showing a toast notification for invalid credentials, etc.
+    // console.log(e);
+    toast.error(e, {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    });
   }
 }
 </script>
@@ -31,8 +45,10 @@ async function handleSubmit() {
         <i class="bi bi-arrow-left me-1"></i>Back
       </button>
     </div>
+    </div>
 
-    <div class="card shadow-sm" style="max-width: 720px;">
+    <div class="container py-4 d-flex justify-content-center">
+    <div class="card shadow-sm w-50">
       <div class="card-body p-4">
         <form @submit.prevent="handleSubmit">
           <div class="mb-3">

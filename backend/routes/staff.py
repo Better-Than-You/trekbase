@@ -5,6 +5,7 @@ from db.models import db, Staff, Trek, Booking, User
 staff_bp = Blueprint('staff', __name__)
 
 
+# helper to serialize a booking as a trek participant (with the booked user)
 def participant(booking):
     user = db.session.get(User, booking.user_id)
     return {
@@ -18,10 +19,12 @@ def participant(booking):
 @staff_bp.route('/dashboard', methods=['GET'])
 @jwt_required()
 def dashboard():
+    # only staff can use the dashboard
     if get_jwt().get('role') != 'staff':
         return jsonify({'error': 'Forbidden'}), 403
     staff_id = int(get_jwt_identity())
     staff = db.session.get(Staff, staff_id)
+    # only the treks assigned to this staff member, with a participant count
     treks = []
     for t in Trek.query.filter_by(assigned_staff_id=staff_id).all():
         d = t.to_dict()
@@ -36,6 +39,7 @@ def trek_participants(trek_id):
     if get_jwt().get('role') != 'staff':
         return jsonify({'error': 'Forbidden'}), 403
     staff_id = int(get_jwt_identity())
+    # a staff member can only view their own assigned treks
     trek = db.session.get(Trek, trek_id)
     if not trek or trek.assigned_staff_id != staff_id:
         return jsonify({'error': 'Trek not found'}), 404
@@ -55,6 +59,7 @@ def update_trek(trek_id):
     if not trek or trek.assigned_staff_id != staff_id:
         return jsonify({'error': 'Trek not found'}), 404
 
+    # staff can tweak the available slots and the booking status
     data = request.get_json() or {}
     slots = data.get('available_slots')
     status = (data.get('status') or '').strip()
