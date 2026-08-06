@@ -1,7 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getAdminDashboard, deleteUser, deleteStaff, deleteTrek } from '@/lib/api'
 import { difficultyBadge, statusBadge, bookingBadge, staffBadge } from '@/lib/badges'
+
+import { toast } from 'vue3-toastify';
+import 'vue3-toastify/dist/index.css';
 
 const data = ref({
   counts: { bookings: 0, treks: 0, staff: 0, users: 0 },
@@ -11,10 +14,28 @@ const data = ref({
   users: [],
 })
 
+const bookingQuery = ref('')
+
+const filteredBookings = computed(() => {
+  const q = bookingQuery.value.trim().toLowerCase()
+  if (!q) return data.value.bookings
+  // bookings filtered by trek/user name
+  return data.value.bookings.filter(b =>
+    b.trek?.name.toLowerCase().includes(q) ||
+    b.user?.name.toLowerCase().includes(q)
+  )
+})
+
 onMounted(async () => {
   try {
     data.value = await getAdminDashboard()
-  } catch {
+  } catch (e) {
+    // handle errors like, showing a toast notification for invalid credentials, etc.
+    // console.log(e);
+    toast.error(e, {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    });
   }
 })
 
@@ -50,6 +71,14 @@ async function handleDeleteStaff(s) {
     alert(e.message)
   }
 }
+
+// format a db datetime string to dd-mm-yyyy hh:mm AM/PM
+function formatDateTime(dt) {
+  const d = new Date(dt)
+  const options = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }
+  return d.toLocaleString('en-US', options).replace(',', '')
+}
+
 </script>
 
 <template>
@@ -173,6 +202,13 @@ async function handleDeleteStaff(s) {
           <h6 class="mb-0 fw-bold">Reservations</h6>
           <span class="badge rounded-pill bg-primary">{{ data.bookings.length }}</span>
         </div>
+        <div class="card-body">
+          <div class="input-group mb-3" style="max-width: 400px;">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input v-model="bookingQuery" type="text" class="form-control"
+                   placeholder="Search by trek or trekker name">
+          </div>
+        </div>
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -186,20 +222,20 @@ async function handleDeleteStaff(s) {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="b in data.bookings" :key="b.id">
+                <tr v-for="b in filteredBookings" :key="b.id">
                   <td class="ps-3 text-secondary">{{ b.id }}</td>
                   <td class="fw-semibold">{{ b.trek ? b.trek.name : '-' }}</td>
                   <td>{{ b.user ? b.user.name : '-' }}</td>
                   <td><span class="badge rounded-pill fw-semibold" :class="bookingBadge(b.status)">{{ b.status }}</span></td>
-                  <td class="pe-3 text-secondary">{{ b.booking_date }}</td>
+                  <td class="pe-3 text-secondary">{{ formatDateTime(b.booking_date) }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div v-if="!data.bookings.length" class="text-center text-secondary py-5">
+          <div v-if="!filteredBookings.length" class="text-center text-secondary py-5">
             <i class="bi bi-signpost-split fs-3 d-block mb-2"></i>
-            <p class="mb-1 fw-semibold text-dark">No reservations yet</p>
-            <p class="small mb-0">Bookings will appear here as soon as trekkers sign up.</p>
+            <p class="mb-1 fw-semibold text-dark">No reservations found</p>
+            <p class="small mb-0">Try a different search, or bookings will appear once trekkers sign up.</p>
           </div>
         </div>
       </div>

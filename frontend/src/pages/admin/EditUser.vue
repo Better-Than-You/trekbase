@@ -18,13 +18,20 @@ const userId = route.params.id
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const address = ref('')
+const pin = ref('')
+const phone = ref('')
 
 // load the current user data and fill the form
 onMounted(async () => {
   try {
     const data = await getUserDetail(userId)
-    name.value = data.user.name
-    email.value = data.user.email
+    const u = data.user
+    name.value = u.name
+    email.value = u.email
+    address.value = u.address || ''
+    pin.value = u.pin || ''
+    phone.value = u.phone || ''
   } catch (e) {
     toast.error(e, {
       position: toast.POSITION.BOTTOM_CENTER,
@@ -38,7 +45,13 @@ onMounted(async () => {
 async function handleSubmit() {
   try {
     // only send the password if a new one was typed in
-    const payload = { name: name.value, email: email.value }
+    const payload = {
+      name: name.value,
+      email: email.value,
+      address: address.value,
+      pin: pin.value,
+      phone: phone.value,
+    }
     if (password.value) payload.password = password.value
 
     await updateUser(userId, payload)
@@ -82,9 +95,24 @@ async function handleSubmit() {
               <input v-model="email" type="email" class="form-control" required placeholder="you@example.com">
             </div>
 
-            <div class="mb-4">
+            <div class="mb-3">
               <label class="form-label small fw-semibold">New Password</label>
               <input v-model="password" type="password" class="form-control" minlength="6" placeholder="Leave blank to keep current password">
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label small fw-semibold">Phone</label>
+                <input v-model="phone" type="text" class="form-control" placeholder="Optional, unique">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label small fw-semibold">PIN / Pincode</label>
+                <input v-model="pin" type="text" class="form-control" placeholder="Optional">
+              </div>
+              <div class="col-12 mb-4">
+                <label class="form-label small fw-semibold">Address</label>
+                <input v-model="address" type="text" class="form-control" placeholder="Optional">
+              </div>
             </div>
 
             <div class="d-flex gap-2">

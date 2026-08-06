@@ -14,11 +14,11 @@ from datetime import date, timedelta, datetime
 from app import app
 from db.models import db, User, Staff, Trek, Booking
 
-# (name, email, password)
+# (name, email, password, phone, address, pin)
 USERS = [
-    ("user1", "user1@email.com", "user1"),
-    ("user2", "user2@email.com", "user2"),
-    ("user3", "user3@email.com", "user3"),
+    ("user1", "user1@email.com", "user1", "9800000101", "Thamel, Kathmandu", "44600"),
+    ("user2", "user2@email.com", "user2", "9800000102", "Lakeside, Pokhara", "33700"),
+    ("user3", "user3@email.com", "user3", "9800000103", "Boudha, Kathmandu", "44600"),
 ]
 
 # (name, contact, email, password, status)
@@ -62,11 +62,11 @@ def main():
 
 def _add_users():
     added = []
-    for name, email, password in USERS:
+    for name, email, password, phone, address, pin in USERS:
         if User.query.filter_by(email=email).first():
             print(f"  user {email} already exists, skipping")
             continue
-        u = User(email=email, name=name)
+        u = User(email=email, name=name, phone=phone, address=address, pin=pin)
         u.set_password(password)
         db.session.add(u)
         added.append(u)

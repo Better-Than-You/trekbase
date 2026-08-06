@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { updateProfile } from '@/lib/api'
 import { state, setAuth } from '@/store/auth'
@@ -7,28 +7,31 @@ import { state, setAuth } from '@/store/auth'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
-
 const router = useRouter()
 
 const name = ref(state.user?.name || '')
+const address = ref(state.user?.address || '')
+const pin = ref(state.user?.pin || '')
+const phone = ref(state.user?.phone || '')
 
 async function handleSubmit() {
   try {
-    const data = await updateProfile(name.value) // more fields if needed
+    const data = await updateProfile({
+      name: name.value,
+      address: address.value,
+      pin: pin.value,
+      phone: phone.value,
+    })
     setAuth({ ...state.user, ...data.user }, state.token)
-
-    // show a success toast notification
     toast.success('Profile updated successfully', {
       position: toast.POSITION.BOTTOM_CENTER,
       autoClose: 3000,
-    });
+    })
   } catch (e) {
-    // handle errors like, showing a toast notification for invalid credentials, etc.
-    // console.log(e);
     toast.error(e, {
       position: toast.POSITION.BOTTOM_CENTER,
       autoClose: 3000,
-    });
+    })
   }
 }
 </script>
@@ -45,8 +48,10 @@ async function handleSubmit() {
             <span class="bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center rounded-circle p-3 mb-3 fs-4 fw-bold"><i class="bi bi-person p-2"></i></span>
             <h6 class="fw-bold mb-1">{{ name || state.user?.name }}</h6>
             <p class="text-secondary small mb-2">{{ state.user?.email }}</p>
-
-            <!-- more details in future -->
+            <p class="text-secondary small mb-0">
+              <i class="bi bi-telephone me-1"></i>{{ phone || 'No phone' }}
+              <br><i class="bi bi-geo-alt me-1"></i>{{ address || 'No address' }}
+            </p>
           </div>
         </div>
       </div>
@@ -65,7 +70,19 @@ async function handleSubmit() {
               <label class="form-label small fw-semibold">Full name</label>
               <input v-model="name" type="text" class="form-control" required>
             </div>
-            
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">Phone</label>
+              <input v-model="phone" type="text" class="form-control" placeholder="Optional, unique">
+            </div>
+            <div class="mb-3">
+              <label class="form-label small fw-semibold">PIN / Pincode</label>
+              <input v-model="pin" type="text" class="form-control" placeholder="Optional">
+            </div>
+            <div class="mb-4">
+              <label class="form-label small fw-semibold">Address</label>
+              <input v-model="address" type="text" class="form-control" placeholder="Optional">
+            </div>
+
             <div class="d-flex gap-2">
               <button class="btn btn-primary" @click="handleSubmit">
                 <i class="bi bi-check2-circle me-1"></i>Save changes

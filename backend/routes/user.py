@@ -116,12 +116,24 @@ def update_profile():
     if not user:
         return jsonify({'error': 'User not found'}), 404
 
-    # currently only the name is editable (email is not changeable)
+    # email is not changeable
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
+    address = (data.get('address') or '').strip()
+    pin = (data.get('pin') or '').strip()
+    phone = (data.get('phone') or '').strip() 
+
+    # phone is optional but unique
+    if phone and user.phone != phone:
+        phone_taken = User.query.filter(User.phone == phone, User.id != user.id).first()
+        if phone_taken:
+            return jsonify({'error': 'Phone number already registered'}), 409
 
     if name:
         user.name = name
+    user.address = address or None
+    user.pin = pin or None
+    user.phone = phone or None
 
     db.session.commit()
     return jsonify({'message': 'Profile updated', 'user': user.to_dict()}), 200

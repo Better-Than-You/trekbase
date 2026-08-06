@@ -34,19 +34,35 @@ export function getAdminDashboard() {
   return request('/admin/dashboard')
 }
 
-export function getAdminUsers() {
-  return request('/admin/users')
+export function getAdminUsers(q) {
+  const query = q ? `?q=${encodeURIComponent(q)}` : ''
+  return request(`/admin/users${query}`)
 }
 
-export function addUser(name, email, password) {
+export function addUser(payload) {
   return request('/admin/users', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify(payload),
   })
 }
 
-export function getAdminStaff() {
-  return request('/admin/staff')
+export function blacklistUser(userId, isBlacklisted) {
+  return request(`/admin/users/${userId}/blacklist`, {
+    method: 'PUT',
+    body: JSON.stringify({ is_blacklisted: isBlacklisted }),
+  })
+}
+
+export function getAdminStaff(q) {
+  const query = q ? `?q=${encodeURIComponent(q)}` : ''
+  return request(`/admin/staff${query}`)
+}
+
+export function blacklistStaff(staffId, isBlacklisted) {
+  return request(`/admin/staff/${staffId}/blacklist`, {
+    method: 'PUT',
+    body: JSON.stringify({ is_blacklisted: isBlacklisted }),
+  })
 }
 
 export function addStaff(name, contact, email, password) {
@@ -86,8 +102,9 @@ export function deleteStaff(staffId) {
   return request(`/admin/staff/${staffId}`, { method: 'DELETE' })
 }
 
-export function getAdminTreks() {
-  return request('/admin/treks')
+export function getAdminTreks(q) {
+  const query = q ? `?q=${encodeURIComponent(q)}` : ''
+  return request(`/admin/treks${query}`)
 }
 
 export function addTrek(payload) {
@@ -136,10 +153,10 @@ export function cancelBooking(bookingId) {
   return request(`/user/bookings/${bookingId}`, { method: 'DELETE' })
 }
 
-export function updateProfile(name) {
+export function updateProfile(payload) {
   return request('/user/profile', {
     method: 'PUT',
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(payload),
   })
 }
 

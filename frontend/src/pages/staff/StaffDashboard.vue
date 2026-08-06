@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { nextTick, ref, onMounted } from 'vue'
 import { getStaffDashboard, getStaffTrek, updateStaffTrek } from '@/lib/api'
 import { state } from '@/store/auth'
 import { statusBadge, bookingBadge } from '@/lib/badges'
@@ -12,6 +12,8 @@ const statusInput = ref('')
 const participants = ref([])
 const showParticipants = ref(false)
 const participantTrekName = ref('')
+const loadingParticipants = ref(false)
+const participantsPanel = ref(null)
 
 onMounted(async () => {
   try {
@@ -46,13 +48,20 @@ async function saveEdit() {
 }
 
 async function viewParticipants(t) {
+  showParticipants.value = true
+  participantTrekName.value = t.name
+  participants.value = []
+  loadingParticipants.value = true
   try {
     const data = await getStaffTrek(t.id)
-    participants.value = data.trek.participants
-    participantTrekName.value = data.trek.name
-    showParticipants.value = true
+    participants.value = data.trek.participants || []
+    await nextTick()
+    participantsPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } catch (e) {
+    showParticipants.value = false
     alert(e.message)
+  } finally {
+    loadingParticipants.value = false
   }
 }
 </script>
@@ -121,10 +130,10 @@ async function viewParticipants(t) {
               </div>
             </div>
             <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-primary" @click="viewParticipants(t)">
+              <button type="button" class="btn btn-sm btn-outline-primary" @click="viewParticipants(t)">
                 <i class="bi bi-people me-1"></i>Participants
               </button>
-              <button class="btn btn-sm btn-primary" @click="openEdit(t)">
+              <button type="button" class="btn btn-sm btn-primary" @click="openEdit(t)">
                 <i class="bi bi-sliders me-1"></i>Manage
               </button>
             </div>
@@ -153,14 +162,18 @@ async function viewParticipants(t) {
         </div>
       </div>
 
-      <div v-if="showParticipants" class="card shadow-sm mb-3">
+      <div v-if="showParticipants" ref="participantsPanel" class="card shadow-sm mb-3">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
           <h6 class="mb-0 fw-bold">Participants &mdash; {{ participantTrekName }}</h6>
-          <button class="btn btn-sm btn-outline-secondary" @click="showParticipants = false">
+          <button type="button" class="btn btn-sm btn-outline-secondary" @click="showParticipants = false">
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
         <div class="card-body p-0">
+          <div v-if="loadingParticipants" class="text-center text-secondary py-5">
+            <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+            Loading participants...
+          </div>
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
               <thead class="table-light">
@@ -171,7 +184,7 @@ async function viewParticipants(t) {
                   <th class="pe-3 text-end">Booking Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody v-if="!loadingParticipants">
                 <tr v-for="p in participants" :key="p.id">
                   <td class="ps-3 text-secondary">{{ p.id }}</td>
                   <td class="fw-semibold">{{ p.user?.name || '-' }}</td>
@@ -181,7 +194,7 @@ async function viewParticipants(t) {
               </tbody>
             </table>
           </div>
-          <div v-if="!participants.length" class="text-center text-secondary py-5">
+          <div v-if="!loadingParticipants && !participants.length" class="text-center text-secondary py-5">
             <i class="bi bi-people fs-3 d-block mb-2"></i>
             <p class="mb-1 fw-semibold text-dark">Nobody has booked this trek yet</p>
             <p class="small mb-0">Set the status to Open so trekkers can book it.</p>

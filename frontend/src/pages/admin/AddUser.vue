@@ -11,25 +11,31 @@ const router = useRouter()
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const address = ref('')
+const pin = ref('')
+const phone = ref('')
 
 async function handleSubmit() {
   try {
-    await addUser(name.value, email.value, password.value)
-    name.value = ''
-    email.value = ''
-    password.value = ''
-  toast.success('Staff account created successfully', {
+    await addUser({
+      name: name.value,
+      email: email.value,
+      password: password.value,
+      address: address.value,
+      pin: pin.value,
+      phone: phone.value,
+    })
+    toast.success('User account created successfully', {
       position: toast.POSITION.BOTTOM_CENTER,
       autoClose: 3000,
-    });
-    router.push('/admin/dashboard');
+    })
+    // route to dashboard after creation
+    router.push('/admin/dashboard')
   } catch (e) {
-    // handle errors like, showing a toast notification for invalid credentials, etc.
-    // console.log(e);
     toast.error(e, {
       position: toast.POSITION.BOTTOM_CENTER,
       autoClose: 3000,
-    });
+    })
   }
 }
 </script>
@@ -61,9 +67,24 @@ async function handleSubmit() {
             <input v-model="email" type="email" class="form-control" required placeholder="you@example.com">
           </div>
 
-          <div class="mb-4">
+          <div class="mb-3">
             <label class="form-label small fw-semibold">Password</label>
             <input v-model="password" type="password" class="form-control" required minlength="6">
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">Phone</label>
+              <input v-model="phone" type="text" class="form-control" placeholder="Optional, unique">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label small fw-semibold">PIN / Pincode</label>
+              <input v-model="pin" type="text" class="form-control" placeholder="Optional">
+            </div>
+            <div class="col-12 mb-4">
+              <label class="form-label small fw-semibold">Address</label>
+              <input v-model="address" type="text" class="form-control" placeholder="Optional">
+            </div>
           </div>
 
           <div class="d-flex gap-2">

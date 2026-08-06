@@ -1,0 +1,558 @@
+openapi: 3.0.3
+info:
+  title: TrekBase API
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Register user
+      security: []
+      requestBody:
+        $ref: '#/components/requestBodies/Register'
+      responses:
+        '201':
+          description: Created
+        '400':
+          $ref: '#/components/responses/400'
+        '409':
+          description: Email exists
+
+  /auth/login:
+    post:
+      summary: Log in
+      security: []
+      requestBody:
+        $ref: '#/components/requestBodies/Login'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Blacklisted
+
+  /auth/profile:
+    get:
+      summary: Get authenticated profile
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+
+  /user/dashboard:
+    get:
+      summary: Get user dashboard
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+
+  /user/treks:
+    get:
+      summary: List open treks
+      parameters:
+        - $ref: '#/components/parameters/SearchQuery'
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+
+  /user/bookings:
+    get:
+      summary: List user bookings
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      summary: Book a trek
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [trek_id]
+              properties:
+                trek_id:
+                  type: integer
+      responses:
+        '201':
+          description: Created
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /user/bookings/{bookingId}:
+    delete:
+      summary: Cancel booking
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /user/profile:
+    put:
+      summary: Update user profile
+      requestBody:
+        $ref: '#/components/requestBodies/UserProfile'
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /staff/dashboard:
+    get:
+      summary: Get staff dashboard
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+
+  /staff/treks/{trekId}:
+    parameters:
+      - $ref: '#/components/parameters/TrekId'
+    get:
+      summary: Get assigned trek details
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      summary: Update assigned trek
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                available_slots:
+                  type: integer
+                status:
+                  type: string
+                  enum: [open, closed, completed]
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /admin/dashboard:
+    get:
+      summary: Get admin dashboard
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+
+  /admin/users:
+    get:
+      summary: List users
+      parameters:
+        - $ref: '#/components/parameters/SearchQuery'
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      summary: Create user
+      requestBody:
+        $ref: '#/components/requestBodies/AdminUser'
+      responses:
+        '201':
+          description: Created
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+        '409':
+          description: Conflict
+
+  /admin/users/{userId}:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    get:
+      summary: Get user
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      summary: Update user
+      requestBody:
+        $ref: '#/components/requestBodies/AdminUser'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    delete:
+      summary: Delete user
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /admin/users/{userId}/blacklist:
+    put:
+      summary: Blacklist user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        $ref: '#/components/requestBodies/Blacklist'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /admin/staff:
+    get:
+      summary: List staff
+      parameters:
+        - $ref: '#/components/parameters/SearchQuery'
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      summary: Create staff
+      requestBody:
+        $ref: '#/components/requestBodies/AdminStaff'
+      responses:
+        '201':
+          description: Created
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+
+  /admin/staff/{staffId}:
+    parameters:
+      - $ref: '#/components/parameters/StaffId'
+    get:
+      summary: Get staff
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      summary: Update staff
+      requestBody:
+        $ref: '#/components/requestBodies/AdminStaff'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    delete:
+      summary: Delete staff
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /admin/staff/{staffId}/blacklist:
+    put:
+      summary: Blacklist staff
+      parameters:
+        - $ref: '#/components/parameters/StaffId'
+      requestBody:
+        $ref: '#/components/requestBodies/Blacklist'
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+  /admin/treks:
+    get:
+      summary: List treks
+      parameters:
+        - $ref: '#/components/parameters/SearchQuery'
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+    post:
+      summary: Create trek
+      requestBody:
+        $ref: '#/components/requestBodies/AdminTrek'
+      responses:
+        '201':
+          description: Created
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+
+  /admin/treks/{trekId}:
+    parameters:
+      - $ref: '#/components/parameters/TrekId'
+    get:
+      summary: Get trek
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    put:
+      summary: Update trek
+      requestBody:
+        $ref: '#/components/requestBodies/AdminTrek'
+      responses:
+        '200':
+          description: OK
+        '400':
+          $ref: '#/components/responses/400'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+    delete:
+      summary: Delete trek
+      responses:
+        '200':
+          description: OK
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    SearchQuery:
+      name: q
+      in: query
+      schema:
+        type: string
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+    StaffId:
+      name: staffId
+      in: path
+      required: true
+      schema:
+        type: integer
+    TrekId:
+      name: trekId
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    '400':
+      description: Bad Request
+    '403':
+      description: Forbidden
+    '404':
+      description: Not Found
+
+  requestBodies:
+    Register:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password, name]
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+              name:
+                type: string
+
+    Login:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [email, password]
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+
+    UserProfile:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              address:
+                type: string
+              pin:
+                type: string
+              phone:
+                type: string
+
+    AdminUser:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, email]
+            properties:
+              name:
+                type: string
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+              address:
+                type: string
+              pin:
+                type: string
+              phone:
+                type: string
+
+    AdminStaff:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+              contact:
+                type: string
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+              status:
+                type: string
+                enum: [available, assigned, not_available]
+
+    AdminTrek:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [name, location, difficulty]
+            properties:
+              name:
+                type: string
+              location:
+                type: string
+              difficulty:
+                type: string
+                enum: [easy, moderate, hard]
+              duration_days:
+                type: integer
+              available_slots:
+                type: integer
+              assigned_staff_id:
+                type: integer
+              status:
+                type: string
+                enum: [pending, approved, open, closed, completed]
+              start_date:
+                type: string
+                format: date
+              end_date:
+                type: string
+                format: date
+
+    Blacklist:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              is_blacklisted:
+                type: boolean

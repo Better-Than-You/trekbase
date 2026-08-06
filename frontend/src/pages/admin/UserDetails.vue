@@ -45,12 +45,24 @@ onMounted(async () => {
               <p class="mb-0">{{ user.email }}</p>
             </div>
             <div class="col-md-6">
-              <small class="text-secondary text-uppercase small">Joined</small>
-              <p class="mb-0">{{ user.created_at || '-' }}</p>
+              <small class="text-secondary text-uppercase small">Phone</small>
+              <p class="mb-0">{{ user.phone || '-' }}</p>
+            </div>
+            <div class="col-md-6">
+              <small class="text-secondary text-uppercase small">PIN</small>
+              <p class="mb-0">{{ user.pin || '-' }}</p>
+            </div>
+            <div class="col-md-6">
+              <small class="text-secondary text-uppercase small">Address</small>
+              <p class="mb-0">{{ user.address || '-' }}</p>
             </div>
             <div class="col-md-6">
               <small class="text-secondary text-uppercase small">Total Bookings</small>
               <p class="mb-0"><span class="badge rounded-pill bg-secondary text-white">{{ user.bookings.length }}</span></p>
+            </div>
+            <div class="col-md-6" v-if="user.is_blacklisted">
+              <small class="text-secondary text-uppercase small">Status</small>
+              <p class="mb-0"><span class="badge rounded-pill bg-dark">Blacklisted</span></p>
             </div>
           </div>
         </div>

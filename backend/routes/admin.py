@@ -68,8 +68,16 @@ def dashboard():
 def list_users():
     if get_jwt().get('role') != 'admin':
         return jsonify({'error': 'Forbidden'}), 403
+    
+    q = (request.args.get('q') or '').strip().lower()
+    query = User.query
+    if q:
+        # search by name/email
+        query = query.filter(db.or_(User.name.ilike(f'%{q}%'), User.email.ilike(f'%{q}%')))
+
     users = []
-    for u in User.query.all():
+    for u in query.all():
+        # exclude the admin
         if u.email == os.getenv('ADMIN_EMAIL', ''):
             continue
         d = u.to_dict()
@@ -88,6 +96,9 @@ def add_user():
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
     name = (data.get('name') or '').strip()
+    address = (data.get('address') or '').strip()
+    pin = (data.get('pin') or '').strip()
+    phone = (data.get('phone') or '').strip() or None
 
     if not email or not password or not name:
         return jsonify({'error': 'Name, email and password are required'}), 400
@@ -95,7 +106,11 @@ def add_user():
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already registered'}), 409
 
-    user = User(email=email, name=name)
+    # ensuring unique phone num
+    if phone and User.query.filter_by(phone=phone).first():
+        return jsonify({'error': 'Phone number already registered'}), 409
+
+    user = User(email=email, name=name, address=address or None, pin=pin or None, phone=phone)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
@@ -107,8 +122,19 @@ def add_user():
 def list_staff():
     if get_jwt().get('role') != 'admin':
         return jsonify({'error': 'Forbidden'}), 403
+    
+    q = (request.args.get('q') or '').strip().lower()
+    query = Staff.query
+    if q:
+        # search by name/email/contact
+        query = query.filter(db.or_(
+            Staff.name.ilike(f'%{q}%'),
+            Staff.email.ilike(f'%{q}%'),
+            Staff.contact.ilike(f'%{q}%'),
+        ))
+
     staff = []
-    for s in Staff.query.all():
+    for s in query.all():
         d = s.to_dict()
         d['assigned_treks'] = [t.to_dict() for t in Trek.query.filter_by(assigned_staff_id=s.id).all()]
         staff.append(d)
@@ -166,6 +192,9 @@ def edit_user(user_id):
     name = (data.get('name') or '').strip()
     email = (data.get('email') or '').strip().lower()
     password = data.get('password') or ''
+    address = (data.get('address') or '').strip()
+    pin = (data.get('pin') or '').strip()
+    phone = (data.get('phone') or '').strip() or None
 
     if not name or not email:
         return jsonify({'error': 'Name and email are required'}), 400
@@ -174,12 +203,38 @@ def edit_user(user_id):
     if existing:
         return jsonify({'error': 'Email already registered'}), 409
 
+    if phone:
+        phone_taken = User.query.filter(User.phone == phone, User.id != user_id).first()
+        if phone_taken:
+            return jsonify({'error': 'Phone number already registered'}), 409
+
     user.name = name
     user.email = email
+    user.address = address or None
+    user.pin = pin or None
+    user.phone = phone
     if password:
         if len(password) < 6:
             return jsonify({'error': 'Password must be at least 6 characters'}), 400
         user.set_password(password)
+    db.session.commit()
+    return jsonify({'message': 'User updated', 'user': user.to_dict()}), 200
+
+
+@admin_bp.route('/users/<int:user_id>/blacklist', methods=['PUT'])
+@jwt_required()
+def toggle_user_blacklist(user_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    # can't blacklist admin
+    if user.email == os.getenv('ADMIN_EMAIL', ''):
+        return jsonify({'error': 'Cannot blacklist the admin account'}), 400
+
+    user.is_blacklisted = bool((request.get_json() or {}).get('is_blacklisted'))
     db.session.commit()
     return jsonify({'message': 'User updated', 'user': user.to_dict()}), 200
 
@@ -254,6 +309,20 @@ def edit_staff(staff_id):
     return jsonify({'message': 'Staff updated', 'staff': staff.to_dict()}), 200
 
 
+@admin_bp.route('/staff/<int:staff_id>/blacklist', methods=['PUT'])
+@jwt_required()
+def toggle_staff_blacklist(staff_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    staff = db.session.get(Staff, staff_id)
+    if not staff:
+        return jsonify({'error': 'Staff not found'}), 404
+
+    staff.is_blacklisted = bool((request.get_json() or {}).get('is_blacklisted'))
+    db.session.commit()
+    return jsonify({'message': 'Staff updated', 'staff': staff.to_dict()}), 200
+
+
 @admin_bp.route('/staff/<int:staff_id>', methods=['DELETE'])
 @jwt_required()
 def delete_staff(staff_id):
@@ -274,7 +343,11 @@ def delete_staff(staff_id):
 def list_treks():
     if get_jwt().get('role') != 'admin':
         return jsonify({'error': 'Forbidden'}), 403
-    treks = [serialize_trek(t) for t in Trek.query.all()]
+    q = (request.args.get('q') or '').strip().lower()
+    query = Trek.query
+    if q:
+        query = query.filter(db.or_(Trek.name.ilike(f'%{q}%'), Trek.location.ilike(f'%{q}%')))
+    treks = [serialize_trek(t) for t in query.all()]
     return jsonify({'treks': treks}), 200
 
 

@@ -1,4 +1,5 @@
 <script setup>
+// vue basics
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAdminTreks, deleteTrek } from '@/lib/api'
@@ -7,15 +8,19 @@ import { difficultyBadge, statusBadge } from '@/lib/badges'
 const router = useRouter()
 
 const treks = ref([])
+const query = ref('')
+let searchTimer = null
 
-onMounted(async () => {
+async function load(q) {
   try {
-    const data = await getAdminTreks()
+    const data = await getAdminTreks(q)
     treks.value = data.treks
   } catch {
     treks.value = []
   }
-})
+}
+
+onMounted(() => load())
 
 async function handleDelete(t) {
   if (!confirm(`Delete trek ${t.name}?`)) return
@@ -41,6 +46,13 @@ async function handleDelete(t) {
     </div>
 
     <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="input-group mb-3" style="max-width: 400px;">
+          <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+          <input v-model="query" type="text" class="form-control" placeholder="Search by name or location"
+                 @input="onSearchInput">
+        </div>
+      </div>
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">

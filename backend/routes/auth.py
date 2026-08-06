@@ -65,15 +65,20 @@ def login():
     if not email or not password:
         return jsonify({'error': 'Email and password are required'}), 400
 
-    # try trekkers first (admin is just a user with the reserved admin email)
     user = User.query.filter_by(email=email).first()
     if user and user.check_password(password):
+        # blacklisted, can't login
+        if user.is_blacklisted:
+            return jsonify({'error': 'Account is blacklisted'}), 403
         role = 'admin' if email == ADMIN_EMAIL else 'user'
         return jsonify(auth_response(user.to_dict(), role)), 200
 
     # otherwise try staff accounts
     staff = Staff.query.filter_by(email=email).first()
     if staff and staff.password_hash and staff.check_password(password):
+        # blacklisted, can't login
+        if staff.is_blacklisted:
+            return jsonify({'error': 'Account is blacklisted'}), 403
         return jsonify(auth_response(staff.to_dict(), 'staff')), 200
 
     return jsonify({'error': 'Invalid email or password'}), 401
