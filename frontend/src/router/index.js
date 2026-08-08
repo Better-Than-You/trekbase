@@ -3,7 +3,7 @@ import { Home, Login, Register } from '@/pages/auth'
 import NotFound from '@/pages/NotFound.vue'
 import { AdminDashboard, AddUser, AddStaff, AddTrek, Userlist, Stafflist, Treklist, UserDetails, StaffDetails, TrekDetails, EditUser, EditStaff, EditTrek } from '@/pages/admin'
 import { UserDashboard, BookingHistory, EditProfile } from '@/pages/user'
-import { StaffDashboard } from '@/pages/staff'
+import { StaffDashboard, StaffTrekDetail } from '@/pages/staff'
 import { state } from '@/store/auth'
 
 const routes = [
@@ -18,6 +18,7 @@ const routes = [
 
   // staff routes
   { path: '/staff/dashboard', component: StaffDashboard, name: 'staff_dashboard', meta: { requiresRole: 'staff' } },
+  { path: '/staff/treks/:id', component: StaffTrekDetail, name: 'staff_trek_detail', meta: { requiresRole: 'staff' } },
 
   // admin routes
   { path: '/admin/dashboard', component: AdminDashboard, name: 'admin_dashboard', meta: { requiresRole: 'admin' } },

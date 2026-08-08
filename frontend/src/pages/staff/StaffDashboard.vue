@@ -1,19 +1,24 @@
 <script setup>
-import { nextTick, ref, onMounted } from 'vue'
-import { getStaffDashboard, getStaffTrek, updateStaffTrek } from '@/lib/api'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { getStaffDashboard } from '@/lib/api'
 import { state } from '@/store/auth'
-import { statusBadge, bookingBadge } from '@/lib/badges'
+import { statusBadge } from '@/lib/badges'
 
+const router = useRouter()
 const treks = ref([])
+const trekQuery = ref('')
 
-const editing = ref(null)
-const slotsInput = ref('')
-const statusInput = ref('')
-const participants = ref([])
-const showParticipants = ref(false)
-const participantTrekName = ref('')
-const loadingParticipants = ref(false)
-const participantsPanel = ref(null)
+const filteredTreks = computed(() => {
+  const q = trekQuery.value.trim().toLowerCase()
+  if (!q) return treks.value
+  // filter assigned treks by name, location or status
+  return treks.value.filter(t =>
+    t.name?.toLowerCase().includes(q) ||
+    t.location?.toLowerCase().includes(q) ||
+    t.status?.toLowerCase().includes(q)
+  )
+})
 
 onMounted(async () => {
   try {
@@ -23,47 +28,6 @@ onMounted(async () => {
     treks.value = []
   }
 })
-
-function openEdit(t) {
-  editing.value = t
-  slotsInput.value = t.available_slots
-  statusInput.value = t.status
-}
-
-function closeEdit() {
-  editing.value = null
-}
-
-async function saveEdit() {
-  try {
-    const data = await updateStaffTrek(editing.value.id, {
-      available_slots: slotsInput.value,
-      status: statusInput.value,
-    })
-    editing.value = { ...editing.value, ...data.trek }
-    const idx = treks.value.findIndex(t => t.id === editing.value.id)
-    if (idx !== -1) treks.value[idx] = { ...treks.value[idx], ...data.trek }
-  } catch {
-  }
-}
-
-async function viewParticipants(t) {
-  showParticipants.value = true
-  participantTrekName.value = t.name
-  participants.value = []
-  loadingParticipants.value = true
-  try {
-    const data = await getStaffTrek(t.id)
-    participants.value = data.trek.participants || []
-    await nextTick()
-    participantsPanel.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  } catch (e) {
-    showParticipants.value = false
-    alert(e.message)
-  } finally {
-    loadingParticipants.value = false
-  }
-}
 </script>
 
 <template>
@@ -117,7 +81,13 @@ async function viewParticipants(t) {
         No treks assigned to you yet.
       </div>
 
-      <div v-for="t in treks" :key="t.id" class="card shadow-sm mb-3">
+      <div v-else class="input-group mb-3" style="max-width: 400px;">
+        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+        <input v-model="trekQuery" type="text" class="form-control"
+               placeholder="Search treks by name, location or status">
+      </div>
+
+      <div v-for="t in filteredTreks" :key="t.id" class="card shadow-sm mb-3">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
             <div>
@@ -129,75 +99,9 @@ async function viewParticipants(t) {
                 <span class="badge rounded-pill bg-secondary text-white">{{ t.participants_count }} registered</span>
               </div>
             </div>
-            <div class="d-flex gap-2">
-              <button type="button" class="btn btn-sm btn-outline-primary" @click="viewParticipants(t)">
-                <i class="bi bi-people me-1"></i>Participants
-              </button>
-              <button type="button" class="btn btn-sm btn-primary" @click="openEdit(t)">
-                <i class="bi bi-sliders me-1"></i>Manage
-              </button>
-            </div>
-          </div>
-
-          <div v-if="editing && editing.id === t.id" class="border-top pt-3 mt-3">
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Available Slots</label>
-                <input v-model="slotsInput" type="number" min="0" class="form-control">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Status</label>
-                <select v-model="statusInput" class="form-select">
-                  <option value="open">Open (Started)</option>
-                  <option value="closed">Closed</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-              <div class="col-md-4 d-flex align-items-end gap-2">
-                <button class="btn btn-primary" @click="saveEdit">Save</button>
-                <button class="btn btn-outline-secondary" @click="closeEdit">Cancel</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="showParticipants" ref="participantsPanel" class="card shadow-sm mb-3">
-        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-          <h6 class="mb-0 fw-bold">Participants &mdash; {{ participantTrekName }}</h6>
-          <button type="button" class="btn btn-sm btn-outline-secondary" @click="showParticipants = false">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div class="card-body p-0">
-          <div v-if="loadingParticipants" class="text-center text-secondary py-5">
-            <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
-            Loading participants...
-          </div>
-          <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th class="ps-3">#</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th class="pe-3 text-end">Booking Status</th>
-                </tr>
-              </thead>
-              <tbody v-if="!loadingParticipants">
-                <tr v-for="p in participants" :key="p.id">
-                  <td class="ps-3 text-secondary">{{ p.id }}</td>
-                  <td class="fw-semibold">{{ p.user?.name || '-' }}</td>
-                  <td class="text-secondary">{{ p.user?.email || '-' }}</td>
-                  <td class="pe-3 text-end"><span class="badge rounded-pill fw-semibold" :class="bookingBadge(p.status)">{{ p.status }}</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-if="!loadingParticipants && !participants.length" class="text-center text-secondary py-5">
-            <i class="bi bi-people fs-3 d-block mb-2"></i>
-            <p class="mb-1 fw-semibold text-dark">Nobody has booked this trek yet</p>
-            <p class="small mb-0">Set the status to Open so trekkers can book it.</p>
+            <button type="button" class="btn btn-sm btn-outline-primary" @click="router.push(`/staff/treks/${t.id}`)">
+              <i class="bi bi-arrow-right me-1"></i>View
+            </button>
           </div>
         </div>
       </div>

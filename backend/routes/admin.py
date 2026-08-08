@@ -2,7 +2,9 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 from db.models import db, User, Staff, Trek, Booking
 from datetime import datetime
-import os 
+import os
+import json
+from cache import cache_get, cache_set, invalidate_treks
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -344,11 +346,16 @@ def list_treks():
     if get_jwt().get('role') != 'admin':
         return jsonify({'error': 'Forbidden'}), 403
     q = (request.args.get('q') or '').strip().lower()
+    key = f"treks:all:{q}" if q else 'treks:all'
+    cached = cache_get(key)
+    if cached is not None:
+        return jsonify(json.loads(cached)), 200
     query = Trek.query
     if q:
         query = query.filter(db.or_(Trek.name.ilike(f'%{q}%'), Trek.location.ilike(f'%{q}%')))
-    treks = [serialize_trek(t) for t in query.all()]
-    return jsonify({'treks': treks}), 200
+    data = {'treks': [serialize_trek(t) for t in query.all()]}
+    cache_set(key, json.dumps(data))
+    return jsonify(data), 200
 
 
 @admin_bp.route('/treks', methods=['POST'])
@@ -382,6 +389,7 @@ def add_trek():
     )
     db.session.add(trek)
     db.session.commit()
+    invalidate_treks()
     return jsonify({'message': 'Trek added', 'trek': trek.to_dict()}), 201
 
 
@@ -390,13 +398,19 @@ def add_trek():
 def trek_details(trek_id):
     if get_jwt().get('role') != 'admin':
         return jsonify({'error': 'Forbidden'}), 403
+    key = f'trek:{trek_id}'
+    cached = cache_get(key)
+    if cached is not None:
+        return jsonify(json.loads(cached)), 200
     trek = db.session.get(Trek, trek_id)
     if not trek:
         return jsonify({'error': 'Trek not found'}), 404
 
     d = serialize_trek(trek)
     d['bookings'] = [booking_with_details(b) for b in Booking.query.filter_by(trek_id=trek.id).all()]
-    return jsonify({'trek': d}), 200
+    data = {'trek': d}
+    cache_set(key, json.dumps(data))
+    return jsonify(data), 200
 
 
 @admin_bp.route('/treks/<int:trek_id>', methods=['PUT'])
@@ -431,6 +445,7 @@ def edit_trek(trek_id):
     trek.start_date = parse_date(data.get('start_date'))
     trek.end_date = parse_date(data.get('end_date'))
     db.session.commit()
+    invalidate_treks()
     return jsonify({'message': 'Trek updated', 'trek': trek.to_dict()}), 200
 
 
@@ -446,5 +461,6 @@ def delete_trek(trek_id):
     Booking.query.filter_by(trek_id=trek.id).delete()
     db.session.delete(trek)
     db.session.commit()
+    invalidate_treks()
     return jsonify({'message': 'Trek deleted'}), 200
 

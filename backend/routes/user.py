@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from db.models import db, User, Trek, Booking
 from datetime import datetime
+import json
+from cache import cache_get, cache_set, invalidate_treks
 
 user_bp = Blueprint('user', __name__)
 
@@ -39,11 +41,18 @@ def treks():
     if get_jwt().get('role') != 'user':
         return jsonify({'error': 'Forbidden'}), 403
     q = (request.args.get('q') or '').strip().lower()
+    # search results are cached per-query; the empty query is the hottest key
+    key = f"treks:open:{q}" if q else 'treks:open'
+    cached = cache_get(key)
+    if cached is not None:
+        return jsonify(json.loads(cached)), 200
     query = Trek.query.filter_by(status='open')
     # optional search filters open treks by name or location
     if q:
         query = query.filter(Trek.name.ilike(f'%{q}%') | Trek.location.ilike(f'%{q}%'))
-    return jsonify({'treks': [t.to_dict() for t in query.all()]}), 200
+    data = {'treks': [t.to_dict() for t in query.all()]}
+    cache_set(key, json.dumps(data))
+    return jsonify(data), 200
 
 
 @user_bp.route('/bookings', methods=['GET'])
@@ -81,6 +90,8 @@ def book_trek():
     trek.available_slots -= 1
     db.session.add(booking)
     db.session.commit()
+    # booking changes slots + participant lists -> drop cached trek data
+    invalidate_treks()
     return jsonify({'message': 'Trek booked', 'booking': booking_with_trek(booking)}), 201
 
 
@@ -103,6 +114,7 @@ def cancel_booking(booking_id):
     if trek:
         trek.available_slots += 1
     db.session.commit()
+    invalidate_treks()
     return jsonify({'message': 'Booking cancelled'}), 200
 
 

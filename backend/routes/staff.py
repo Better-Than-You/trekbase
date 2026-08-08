@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from db.models import db, Staff, Trek, Booking, User
+import json
+from cache import cache_get, cache_set, invalidate_treks
 
 staff_bp = Blueprint('staff', __name__)
 
@@ -25,12 +27,18 @@ def dashboard():
     staff_id = int(get_jwt_identity())
     staff = db.session.get(Staff, staff_id)
     # only the treks assigned to this staff member, with a participant count
+    key = f'stafftreks:{staff_id}'
+    cached = cache_get(key)
+    if cached is not None:
+        return jsonify(json.loads(cached)), 200
     treks = []
     for t in Trek.query.filter_by(assigned_staff_id=staff_id).all():
         d = t.to_dict()
         d['participants_count'] = Booking.query.filter_by(trek_id=t.id).count()
         treks.append(d)
-    return jsonify({'staff': staff.to_dict() if staff else None, 'treks': treks}), 200
+    data = {'staff': staff.to_dict() if staff else None, 'treks': treks}
+    cache_set(key, json.dumps(data))
+    return jsonify(data), 200
 
 
 @staff_bp.route('/treks/<int:trek_id>', methods=['GET'])
@@ -40,13 +48,19 @@ def trek_participants(trek_id):
         return jsonify({'error': 'Forbidden'}), 403
     staff_id = int(get_jwt_identity())
     # a staff member can only view their own assigned treks
+    key = f'stafftrek:{trek_id}'
+    cached = cache_get(key)
+    if cached is not None:
+        return jsonify(json.loads(cached)), 200
     trek = db.session.get(Trek, trek_id)
     if not trek or trek.assigned_staff_id != staff_id:
         return jsonify({'error': 'Trek not found'}), 404
 
     d = trek.to_dict()
     d['participants'] = [participant(b) for b in Booking.query.filter_by(trek_id=trek.id).all()]
-    return jsonify({'trek': d}), 200
+    data = {'trek': d}
+    cache_set(key, json.dumps(data))
+    return jsonify(data), 200
 
 
 @staff_bp.route('/treks/<int:trek_id>', methods=['PUT'])
