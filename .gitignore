@@ -5,7 +5,9 @@ __pycache__/
 instance/
 .venv/
 run.sh
-FEATURES.md
+
 
 # add scheduler files
 celerybeat-schedule*
+
+seed.py

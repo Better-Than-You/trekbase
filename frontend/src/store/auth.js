@@ -26,23 +26,28 @@ console.log(count.value) // 3
 const state = reactive({
   user: initialUser,
   token: localStorage.getItem('trekbase_token') || null,
+  refreshToken: localStorage.getItem('trekbase_refresh_token') || null,
   role: initialUser?.role || 'user',
 })
 
-function setAuth(user, token) {
+function setAuth(user, token, refreshToken) {
   state.user = user
   state.token = token
+  state.refreshToken = refreshToken || null
   state.role = user.role || 'user'
   localStorage.setItem('trekbase_user', JSON.stringify(user))
   localStorage.setItem('trekbase_token', token)
+  localStorage.setItem('trekbase_refresh_token', refreshToken)
 }
 
 function clearAuth() {
   state.user = null
   state.token = null
+  state.refreshToken = null
   state.role = 'user'
   localStorage.removeItem('trekbase_user')
   localStorage.removeItem('trekbase_token')
+  localStorage.removeItem('trekbase_refresh_token')
 }
 
 export { state, setAuth, clearAuth }

@@ -22,7 +22,7 @@ async function handleTrigger(fn, label) {
   sending.value = true
   try {
     const data = await fn()
-    toast.success(`${label} triggered (task ${data.task_id}).`, {
+    toast.success(`${label} triggered.`, {
       position: toast.POSITION.BOTTOM_CENTER,
       autoClose: 3000,
     })

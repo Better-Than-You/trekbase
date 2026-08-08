@@ -48,6 +48,17 @@ paths:
         '401':
           description: Unauthorized
 
+  /auth/refresh:
+    post:
+      summary: Exchange a refresh token for a new access token
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: New access token issued
+        '401':
+          description: Invalid or missing refresh token
+
   /user/dashboard:
     get:
       summary: Get user dashboard
@@ -128,6 +139,50 @@ paths:
           $ref: '#/components/responses/403'
         '404':
           $ref: '#/components/responses/404'
+
+  /user/export-history:
+    post:
+      summary: Trigger async export of the user's booking history as a CSV job
+      responses:
+        '202':
+          description: Job queued, returns a task_id to poll
+        '403':
+          $ref: '#/components/responses/403'
+
+  /user/export-history/{taskId}:
+    get:
+      summary: Poll the booking-history export job status
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job finished; returns the CSV content
+        '202':
+          description: Job still pending/running
+        '403':
+          $ref: '#/components/responses/403'
+
+  /admin/jobs/reminders:
+    post:
+      summary: Trigger daily trek reminders job
+      responses:
+        '202':
+          description: Job queued, returns a task_id
+        '403':
+          $ref: '#/components/responses/403'
+
+  /admin/jobs/monthly-report:
+    post:
+      summary: Trigger monthly activity report job
+      responses:
+        '202':
+          description: Job queued, returns a task_id
+        '403':
+          $ref: '#/components/responses/403'
 
   /staff/dashboard:
     get:

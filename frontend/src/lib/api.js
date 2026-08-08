@@ -1,184 +1,190 @@
-const BASE = '/api'
+import axios from 'axios'
 
-async function request(endpoint, options = {}) {
+const axiosInstance = axios.create({
+  baseURL: '/api',
+  headers: { 'Content-Type': 'application/json' },
+})
+
+// attach access token for each request
+axiosInstance.interceptors.request.use((config) => {
   const token = localStorage.getItem('trekbase_token')
-  const headers = { 'Content-Type': 'application/json', ...options.headers }
-  if (token) headers['Authorization'] = `Bearer ${token}`
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
 
-  const res = await fetch(`${BASE}${endpoint}`, { ...options, headers })
-  const data = await res.json()
+// if access token is expired create a new one using refresh_token
+let refreshPromise = null
 
-  if (!res.ok) throw new Error(data.error || 'Request failed')
-  return data
-}
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config
+    if (error.response?.status === 401) {
+      original._retry = true
+      try {
+        refreshPromise =
+          refreshPromise ||
+          axios.post('/api/auth/refresh', null, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('trekbase_refresh_token')}` },
+          })
+        const { data } = await refreshPromise
+        refreshPromise = null
+
+        localStorage.setItem('trekbase_token', data.access_token)
+        original.headers.Authorization = `Bearer ${data.access_token}`
+        return axiosInstance(original)
+      } catch (refreshError) {
+        refreshPromise = null
+
+        localStorage.removeItem('trekbase_token')
+        localStorage.removeItem('trekbase_refresh_token')
+        localStorage.removeItem('trekbase_user')
+        window.location.href = '/auth/login'
+
+        return Promise.reject(refreshError)
+      }
+    }
+
+    // error handling msg for frontend
+    error.message = error.response?.data?.error || error.message
+    return Promise.reject(error)
+  }
+)
 
 export function login(email, password) {
-  return request('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  })
+  return axiosInstance.post('/auth/login', { email, password }).then((r) => r.data)
 }
 
 export function register(name, email, password) {
-  return request('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify({ name, email, password }),
-  })
+  return axiosInstance.post('/auth/register', { name, email, password }).then((r) => r.data)
 }
 
 export function getProfile() {
-  return request('/auth/profile')
+  return axiosInstance.get('/auth/profile').then((r) => r.data)
 }
 
 export function getAdminDashboard() {
-  return request('/admin/dashboard')
+  return axiosInstance.get('/admin/dashboard').then((r) => r.data)
 }
 
 export function triggerReminders() {
-  return request('/admin/jobs/reminders', { method: 'POST' })
+  return axiosInstance.post('/admin/jobs/reminders').then((r) => r.data)
 }
 
 export function triggerMonthlyReport() {
-  return request('/admin/jobs/monthly-report', { method: 'POST' })
+  return axiosInstance.post('/admin/jobs/monthly-report').then((r) => r.data)
 }
 
 export function getAdminUsers(q) {
-  const query = q ? `?q=${encodeURIComponent(q)}` : ''
-  return request(`/admin/users${query}`)
+  return axiosInstance.get('/admin/users', { params: q ? { q } : undefined }).then((r) => r.data)
 }
 
 export function addUser(payload) {
-  return request('/admin/users', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  return axiosInstance.post('/admin/users', payload).then((r) => r.data)
 }
 
 export function blacklistUser(userId, isBlacklisted) {
-  return request(`/admin/users/${userId}/blacklist`, {
-    method: 'PUT',
-    body: JSON.stringify({ is_blacklisted: isBlacklisted }),
-  })
+  return axiosInstance.put(`/admin/users/${userId}/blacklist`, { is_blacklisted: isBlacklisted }).then((r) => r.data)
 }
 
 export function getAdminStaff(q) {
-  const query = q ? `?q=${encodeURIComponent(q)}` : ''
-  return request(`/admin/staff${query}`)
+  return axiosInstance.get('/admin/staff', { params: q ? { q } : undefined }).then((r) => r.data)
 }
 
 export function blacklistStaff(staffId, isBlacklisted) {
-  return request(`/admin/staff/${staffId}/blacklist`, {
-    method: 'PUT',
-    body: JSON.stringify({ is_blacklisted: isBlacklisted }),
-  })
+  return axiosInstance.put(`/admin/staff/${staffId}/blacklist`, { is_blacklisted: isBlacklisted }).then((r) => r.data)
 }
 
 export function addStaff(name, contact, email, password) {
-  return request('/admin/staff', {
-    method: 'POST',
-    body: JSON.stringify({ name, contact, email, password }),
-  })
+  return axiosInstance.post('/admin/staff', { name, contact, email, password }).then((r) => r.data)
 }
 
 export function getUserDetail(userId) {
-  return request(`/admin/users/${userId}`)
+  return axiosInstance.get(`/admin/users/${userId}`).then((r) => r.data)
 }
 
 export function updateUser(userId, payload) {
-  return request(`/admin/users/${userId}`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
+  return axiosInstance.put(`/admin/users/${userId}`, payload).then((r) => r.data)
 }
 
 export function deleteUser(userId) {
-  return request(`/admin/users/${userId}`, { method: 'DELETE' })
+  return axiosInstance.delete(`/admin/users/${userId}`).then((r) => r.data)
 }
 
 export function getStaffDetail(staffId) {
-  return request(`/admin/staff/${staffId}`)
+  return axiosInstance.get(`/admin/staff/${staffId}`).then((r) => r.data)
 }
 
 export function updateStaff(staffId, payload) {
-  return request(`/admin/staff/${staffId}`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
+  return axiosInstance.put(`/admin/staff/${staffId}`, payload).then((r) => r.data)
 }
 
 export function deleteStaff(staffId) {
-  return request(`/admin/staff/${staffId}`, { method: 'DELETE' })
+  return axiosInstance.delete(`/admin/staff/${staffId}`).then((r) => r.data)
 }
 
 export function getAdminTreks(q) {
-  const query = q ? `?q=${encodeURIComponent(q)}` : ''
-  return request(`/admin/treks${query}`)
+  return axiosInstance.get('/admin/treks', { params: q ? { q } : undefined }).then((r) => r.data)
 }
 
 export function addTrek(payload) {
-  return request('/admin/treks', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  return axiosInstance.post('/admin/treks', payload).then((r) => r.data)
 }
 
 export function getTrekDetail(trekId) {
-  return request(`/admin/treks/${trekId}`)
+  return axiosInstance.get(`/admin/treks/${trekId}`).then((r) => r.data)
 }
 
 export function updateTrek(trekId, payload) {
-  return request(`/admin/treks/${trekId}`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
+  return axiosInstance.put(`/admin/treks/${trekId}`, payload).then((r) => r.data)
 }
 
 export function deleteTrek(trekId) {
-  return request(`/admin/treks/${trekId}`, { method: 'DELETE' })
+  return axiosInstance.delete(`/admin/treks/${trekId}`).then((r) => r.data)
 }
 
 export function getUserDashboard() {
-  return request('/user/dashboard')
+  return axiosInstance.get('/user/dashboard').then((r) => r.data)
 }
 
 export function searchTreks(q) {
-  const query = q ? `?q=${encodeURIComponent(q)}` : ''
-  return request(`/user/treks${query}`)
+  return axiosInstance.get('/user/treks', { params: q ? { q } : undefined }).then((r) => r.data)
 }
 
 export function getMyBookings() {
-  return request('/user/bookings')
+  return axiosInstance.get('/user/bookings').then((r) => r.data)
 }
 
 export function bookTrek(trekId) {
-  return request('/user/bookings', {
-    method: 'POST',
-    body: JSON.stringify({ trek_id: trekId }),
-  })
+  return axiosInstance.post('/user/bookings', { trek_id: trekId }).then((r) => r.data)
 }
 
 export function cancelBooking(bookingId) {
-  return request(`/user/bookings/${bookingId}`, { method: 'DELETE' })
+  return axiosInstance.delete(`/user/bookings/${bookingId}`).then((r) => r.data)
 }
 
 export function updateProfile(payload) {
-  return request('/user/profile', {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
+  return axiosInstance.put('/user/profile', payload).then((r) => r.data)
+}
+
+export function triggerExportHistory() {
+  return axiosInstance.post('/user/export-history').then((r) => r.data)
+}
+
+export function getExportHistoryStatus(taskId) {
+  return axiosInstance.get(`/user/export-history/${taskId}`).then((r) => r.data)
 }
 
 export function getStaffDashboard() {
-  return request('/staff/dashboard')
+  return axiosInstance.get('/staff/dashboard').then((r) => r.data)
 }
 
 export function getStaffTrek(trekId) {
-  return request(`/staff/treks/${trekId}`)
+  return axiosInstance.get(`/staff/treks/${trekId}`).then((r) => r.data)
 }
 
 export function updateStaffTrek(trekId, payload) {
-  return request(`/staff/treks/${trekId}`, {
-    method: 'PUT',
-    body: JSON.stringify(payload),
-  })
+  return axiosInstance.put(`/staff/treks/${trekId}`, payload).then((r) => r.data)
 }
+
+export default axiosInstance

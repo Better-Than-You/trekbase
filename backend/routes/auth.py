@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, create_refresh_token
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt, get_jwt_identity
 from db.models import db, User, Staff
 
 load_dotenv()
@@ -92,3 +92,15 @@ def profile():
     if not user:
         return jsonify({'error': 'User not found'}), 404
     return jsonify({'user': user.to_dict()}), 200
+
+
+@auth_bp.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    # exchange a valid refresh token for a fresh access token
+    claims = get_jwt()
+    access_token = create_access_token(
+        identity=str(get_jwt_identity()),
+        additional_claims={'role': claims.get('role'), 'email': claims.get('email')},
+    )
+    return jsonify({'access_token': access_token}), 200

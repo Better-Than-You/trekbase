@@ -16,7 +16,7 @@ const password = ref('')
 
 async function handleSubmit() {
   try {    const data = await register(name.value, email.value, password.value)
-    setAuth(data.user, data.access_token)
+    setAuth(data.user, data.access_token, data.refresh_token)
     router.push('/user/dashboard')
   } catch (e) {
     // handle errors like, showing a toast notification for invalid credentials, etc.

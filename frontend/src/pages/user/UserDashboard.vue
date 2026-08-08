@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getUserDashboard, searchTreks, bookTrek, cancelBooking } from '@/lib/api'
+import { getUserDashboard, searchTreks, bookTrek, cancelBooking, triggerExportHistory, getExportHistoryStatus } from '@/lib/api'
 import { state } from '@/store/auth'
 import { difficultyBadge, statusBadge, bookingBadge } from '@/lib/badges'
+import { toast } from 'vue3-toastify'
+import 'vue3-toastify/dist/index.css'
 
 const router = useRouter()
 
@@ -11,6 +13,7 @@ const availableTreks = ref([])
 const bookings = ref([])
 const searchResults = ref(null)
 const query = ref('')
+const exporting = ref(false)
 
 onMounted(async () => {
   try {
@@ -20,6 +23,72 @@ onMounted(async () => {
   } catch {
   }
 })
+
+async function handleExport() {
+  if (!confirm('Export your booking history as CSV?')) return
+  exporting.value = true
+  let taskId
+  try {
+    const res = await triggerExportHistory()
+    taskId = res.task_id
+    toast.success('Export started. This may take a moment...', {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    })
+  } catch (e) {
+    toast.error(e.message, {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    })
+    exporting.value = false
+    return
+  }
+
+  // poll until the background job finishes
+  const poll = async () => {
+    try {
+      const res = await getExportHistoryStatus(taskId)
+      if (res.status === 'ready') {
+        downloadCsv(res.csv_content, res.user_name)
+        toast.success(`Export complete! Downloaded ${res.record_count} record(s).`, {
+          position: toast.POSITION.BOTTOM_CENTER,
+          autoClose: 5000,
+        })
+        exporting.value = false
+        return
+      }
+      if (res.status === 'failed') {
+        toast.error(res.error || 'Export failed', {
+          position: toast.POSITION.BOTTOM_CENTER,
+          autoClose: 5000,
+        })
+        exporting.value = false
+        return
+      }
+      setTimeout(poll, 1500)
+    } catch (e) {
+      toast.error(e.message, {
+        position: toast.POSITION.BOTTOM_CENTER,
+        autoClose: 5000,
+      })
+      exporting.value = false
+    }
+  }
+  poll()
+}
+
+function downloadCsv(content, userName) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  const safe = (userName || 'user').replace(/[^a-z0-9]+/gi, '-').toLowerCase()
+  a.href = url
+  a.download = `trek-${safe}-history.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
 
 async function doSearch() {
   try {
@@ -80,6 +149,9 @@ function formatDateTime(dt) {
       </div>
       <button @click="router.push('/user/history')" class="btn btn-outline-primary">
         <i class="bi bi-clock-history me-1"></i>History
+      </button>
+      <button class="btn btn-outline-success" :disabled="exporting" @click="handleExport">
+        <i class="bi bi-download me-1"></i>{{ exporting ? 'Exporting...' : 'Export CSV' }}
       </button>
     </div>
 

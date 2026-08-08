@@ -1,5 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
+from celery.result import AsyncResult
+from celery_app import celery_app
 from db.models import db, User, Trek, Booking
 from datetime import datetime
 import json
@@ -116,6 +118,37 @@ def cancel_booking(booking_id):
     db.session.commit()
     invalidate_treks()
     return jsonify({'message': 'Booking cancelled'}), 200
+
+
+@user_bp.route('/export-history', methods=['POST'])
+@jwt_required()
+def export_history():
+    # trigger the celery job that builds the booking-history CSV
+    if get_jwt().get('role') != 'user':
+        return jsonify({'error': 'Forbidden'}), 403
+    user_id = int(get_jwt_identity())
+    from tasks import export_booking_history_csv
+    result = export_booking_history_csv.delay(user_id)
+    return jsonify({'task_id': result.id}), 202
+
+
+@user_bp.route('/export-history/<task_id>', methods=['GET'])
+@jwt_required()
+def export_history_status(task_id):
+    # poll endpoint: returns the CSV once the job has finished
+    if get_jwt().get('role') != 'user':
+        return jsonify({'error': 'Forbidden'}), 403
+    result = AsyncResult(task_id, app=celery_app)
+    if result.state == 'PENDING':
+        return jsonify({'status': 'pending'}), 202
+    if result.state == 'FAILURE':
+        return jsonify({'status': 'failed', 'error': str(result.info)}), 202
+    if result.state == 'SUCCESS':
+        data = result.get()
+        if data.get('error'):
+            return jsonify({'status': 'failed', 'error': data['error']}), 202
+        return jsonify({**data, 'status': 'ready'}), 200
+    return jsonify({'status': 'running'}), 202
 
 
 @user_bp.route('/profile', methods=['PUT'])
