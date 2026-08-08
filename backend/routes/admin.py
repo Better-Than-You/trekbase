@@ -47,7 +47,7 @@ def dashboard():
         return jsonify({'error': 'Forbidden'}), 403
     bookings = [booking_with_details(b) for b in Booking.query.all()]
     staff = [s.to_dict() for s in Staff.query.all()]
-    users = [u.to_dict() for u in User.query.all() if u.email != os.getenv('ADMIN_EMAIL', '')]
+    users = [u.to_dict() for u in User.query.all() if u.email != os.getenv('ADMIN_EMAIL', 'admin@trekbase.com')]
     treks = [serialize_trek(t) for t in Trek.query.all()]
 
     return jsonify({
