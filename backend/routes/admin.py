@@ -79,7 +79,7 @@ def list_users():
     users = []
     for u in query.all():
         # exclude the admin
-        if u.email == os.getenv('ADMIN_EMAIL', ''):
+        if u.email == os.getenv('ADMIN_EMAIL', 'admin@trekbase.com'):
             continue
         d = u.to_dict()
         d['bookings_count'] = Booking.query.filter_by(user_id=u.id).count()
