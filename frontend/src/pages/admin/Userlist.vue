@@ -8,7 +8,6 @@ const router = useRouter()
 
 const users = ref([])
 const query = ref('')
-let searchTimer = null
 
 async function load(q) {
   try {
@@ -20,6 +19,15 @@ async function load(q) {
 }
 
 onMounted(() => load())
+
+function handleSearch() {
+  load(query.value)
+}
+
+function clearSearch() {
+  query.value = ''
+  load('')
+}
 
 async function handleDelete(u) {
   if (!confirm(`Delete user ${u.name}?`)) return
@@ -56,11 +64,12 @@ async function toggleBlacklist(u) {
 
     <div class="card shadow-sm">
       <div class="card-body">
-        <div class="input-group mb-3" style="max-width: 400px;">
+        <form class="input-group mb-3" style="max-width: 400px;" @submit.prevent="handleSearch">
           <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-          <input v-model="query" type="text" class="form-control" placeholder="Search by name or email"
-                 @input="onSearchInput">
-        </div>
+          <input v-model="query" type="text" class="form-control" placeholder="Search by name or email">
+          <button class="btn btn-primary" type="submit">Search</button>
+          <button v-if="query" class="btn btn-outline-secondary" type="button" @click="clearSearch">Clear</button>
+        </form>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">

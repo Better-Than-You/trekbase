@@ -52,7 +52,7 @@ onMounted(async () => {
   } catch (e) {
     // handle errors like, showing a toast notification for invalid credentials, etc.
     // console.log(e);
-    toast.error(e, {
+    toast.error(e.message, {
       position: toast.POSITION.BOTTOM_CENTER,
       autoClose: 3000,
     });

@@ -10,7 +10,7 @@ Trekking applications (bookings, treks, staff) management system.
 
 ---
 
-## Running services
+## Instructions
 
 ### 1. Redis
 
