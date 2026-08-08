@@ -8,7 +8,7 @@ from cache import cache_get, cache_set, invalidate_treks
 
 admin_bp = Blueprint('admin', __name__)
 
-# helper to parse a 'YYYY-MM-DD' string into a date object (None if invalid/empty)
+# date to yyyy-mm-dd string helper
 def parse_date(s):
     if not s:
         return None
@@ -18,7 +18,7 @@ def parse_date(s):
         return None
 
 
-# helper to serialize a booking with its related trek and user objects
+# booking details parser
 def booking_with_details(booking):
     trek = db.session.get(Trek, booking.trek_id)
     user = db.session.get(User, booking.user_id)
@@ -31,7 +31,7 @@ def booking_with_details(booking):
     }
 
 
-# helper to serialize a trek with its assigned staff and booking count
+# trek > trek + booking count + staff
 def serialize_trek(trek):
     d = trek.to_dict()
     staff = db.session.get(Staff, trek.assigned_staff_id)
@@ -50,7 +50,6 @@ def dashboard():
     users = [u.to_dict() for u in User.query.all() if u.email != os.getenv('ADMIN_EMAIL', '')]
     treks = [serialize_trek(t) for t in Trek.query.all()]
 
-    # everything in one payload, plus summary counts for the stat cards
     return jsonify({
         'counts': {
             'bookings': len(bookings),
@@ -64,7 +63,7 @@ def dashboard():
         'treks': treks,
     }), 200
 
-
+# ------ users ----------------
 @admin_bp.route('/users', methods=['GET'])
 @jwt_required()
 def list_users():
@@ -118,7 +117,94 @@ def add_user():
     db.session.commit()
     return jsonify({'message': 'User added', 'user': user.to_dict()}), 201
 
+@admin_bp.route('/users/<int:user_id>', methods=['GET'])
+@jwt_required()
+def user_details(user_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
 
+    d = user.to_dict()
+    d['created_at'] = str(user.created_at) if user.created_at else None
+    d['bookings'] = [booking_with_details(b) for b in Booking.query.filter_by(user_id=user.id).all()]
+    return jsonify({'user': d}), 200
+
+
+@admin_bp.route('/users/<int:user_id>', methods=['PUT'])
+@jwt_required()
+def edit_user(user_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip().lower()
+    address = (data.get('address') or '').strip()
+    pin = (data.get('pin') or '').strip()
+    phone = (data.get('phone') or '').strip() or None
+
+    if not name or not email:
+        return jsonify({'error': 'Name and email are required'}), 400
+
+    existing = User.query.filter(User.email == email, User.id != user_id).first()
+    if existing:
+        return jsonify({'error': 'Email already registered'}), 409
+
+    if phone:
+        phone_taken = User.query.filter(User.phone == phone, User.id != user_id).first()
+        if phone_taken:
+            return jsonify({'error': 'Phone number already registered'}), 409
+
+    user.name = name
+    user.email = email
+    user.address = address or None
+    user.pin = pin or None
+    user.phone = phone
+    db.session.commit()
+    return jsonify({'message': 'User updated', 'user': user.to_dict()}), 200
+
+
+@admin_bp.route('/users/<int:user_id>/blacklist', methods=['PUT'])
+@jwt_required()
+def toggle_user_blacklist(user_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    # can't blacklist admin
+    if user.email == os.getenv('ADMIN_EMAIL', ''):
+        return jsonify({'error': 'Cannot blacklist the admin account'}), 400
+
+    user.is_blacklisted = bool((request.get_json() or {}).get('is_blacklisted'))
+    db.session.commit()
+    return jsonify({'message': 'User updated', 'user': user.to_dict()}), 200
+
+
+@admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    user = db.session.get(User, user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    if user.email == os.getenv('ADMIN_EMAIL', ''):
+        return jsonify({'error': 'Cannot delete admin account'}), 400
+
+    Booking.query.filter_by(user_id=user.id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'User deleted'}), 200
+
+
+# ------------ staffs ---------------
 @admin_bp.route('/staff', methods=['GET'])
 @jwt_required()
 def list_staff():
@@ -166,98 +252,6 @@ def add_staff():
     return jsonify({'message': 'Staff added', 'staff': staff.to_dict()}), 201
 
 
-@admin_bp.route('/users/<int:user_id>', methods=['GET'])
-@jwt_required()
-def user_details(user_id):
-    if get_jwt().get('role') != 'admin':
-        return jsonify({'error': 'Forbidden'}), 403
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-
-    d = user.to_dict()
-    d['created_at'] = str(user.created_at) if user.created_at else None
-    d['bookings'] = [booking_with_details(b) for b in Booking.query.filter_by(user_id=user.id).all()]
-    return jsonify({'user': d}), 200
-
-
-@admin_bp.route('/users/<int:user_id>', methods=['PUT'])
-@jwt_required()
-def edit_user(user_id):
-    if get_jwt().get('role') != 'admin':
-        return jsonify({'error': 'Forbidden'}), 403
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-
-    data = request.get_json() or {}
-    name = (data.get('name') or '').strip()
-    email = (data.get('email') or '').strip().lower()
-    password = data.get('password') or ''
-    address = (data.get('address') or '').strip()
-    pin = (data.get('pin') or '').strip()
-    phone = (data.get('phone') or '').strip() or None
-
-    if not name or not email:
-        return jsonify({'error': 'Name and email are required'}), 400
-
-    existing = User.query.filter(User.email == email, User.id != user_id).first()
-    if existing:
-        return jsonify({'error': 'Email already registered'}), 409
-
-    if phone:
-        phone_taken = User.query.filter(User.phone == phone, User.id != user_id).first()
-        if phone_taken:
-            return jsonify({'error': 'Phone number already registered'}), 409
-
-    user.name = name
-    user.email = email
-    user.address = address or None
-    user.pin = pin or None
-    user.phone = phone
-    if password:
-        if len(password) < 6:
-            return jsonify({'error': 'Password must be at least 6 characters'}), 400
-        user.set_password(password)
-    db.session.commit()
-    return jsonify({'message': 'User updated', 'user': user.to_dict()}), 200
-
-
-@admin_bp.route('/users/<int:user_id>/blacklist', methods=['PUT'])
-@jwt_required()
-def toggle_user_blacklist(user_id):
-    if get_jwt().get('role') != 'admin':
-        return jsonify({'error': 'Forbidden'}), 403
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    
-    # can't blacklist admin
-    if user.email == os.getenv('ADMIN_EMAIL', ''):
-        return jsonify({'error': 'Cannot blacklist the admin account'}), 400
-
-    user.is_blacklisted = bool((request.get_json() or {}).get('is_blacklisted'))
-    db.session.commit()
-    return jsonify({'message': 'User updated', 'user': user.to_dict()}), 200
-
-
-@admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
-@jwt_required()
-def delete_user(user_id):
-    if get_jwt().get('role') != 'admin':
-        return jsonify({'error': 'Forbidden'}), 403
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({'error': 'User not found'}), 404
-    if user.email == os.getenv('ADMIN_EMAIL', ''):
-        return jsonify({'error': 'Cannot delete admin account'}), 400
-
-    Booking.query.filter_by(user_id=user.id).delete()
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({'message': 'User deleted'}), 200
-
-
 @admin_bp.route('/staff/<int:staff_id>', methods=['GET'])
 @jwt_required()
 def staff_details(staff_id):
@@ -285,7 +279,6 @@ def edit_staff(staff_id):
     name = (data.get('name') or '').strip()
     contact = (data.get('contact') or '').strip()
     email = (data.get('email') or '').strip().lower()
-    password = data.get('password') or ''
     status = (data.get('status') or '').strip()
 
     if not name:
@@ -303,10 +296,6 @@ def edit_staff(staff_id):
     staff.email = email or None
     if status:
         staff.status = status
-    if password:
-        if len(password) < 6:
-            return jsonify({'error': 'Password must be at least 6 characters'}), 400
-        staff.set_password(password)
     db.session.commit()
     return jsonify({'message': 'Staff updated', 'staff': staff.to_dict()}), 200
 
@@ -339,7 +328,7 @@ def delete_staff(staff_id):
     db.session.commit()
     return jsonify({'message': 'Staff deleted'}), 200
 
-
+# --------------- treks ----------------------
 @admin_bp.route('/treks', methods=['GET'])
 @jwt_required()
 def list_treks():
@@ -465,7 +454,7 @@ def delete_trek(trek_id):
     return jsonify({'message': 'Trek deleted'}), 200
 
 
-# manually trigger the Celery email jobs (same code as the scheduled runs)
+# ------------ manual triggers ------------------------------
 @admin_bp.route('/jobs/reminders', methods=['POST'])
 @jwt_required()
 def trigger_reminders():

@@ -3,11 +3,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getStaffTrek, updateStaffTrek } from '@/lib/api'
 import { statusBadge, difficultyBadge, bookingBadge } from '@/lib/badges'
+import { toast } from 'vue3-toastify'
+import 'vue3-toastify/dist/index.css'
 
 const route = useRoute()
 const router = useRouter()
 
-const loading = ref(true)
 const trek = ref(null)
 const notFound = ref(false)
 const participantQuery = ref('')
@@ -29,30 +30,31 @@ const editing = ref(false)
 const slotsInput = ref('')
 const statusInput = ref('')
 const saving = ref(false)
-const savedMessage = ref('')
 
 onMounted(async () => {
   await load()
 })
 
 async function load() {
-  loading.value = true
   try {
     const id = Number(route.params.id)
-    if (!id) return (notFound.value = true)
+    if (!id) {
+      notFound.value = true
+      return
+    }
     const data = await getStaffTrek(id)
-    if (!data.trek) return (notFound.value = true)
+    if (!data.trek) {
+      notFound.value = true
+      return
+    }
     trek.value = data.trek
   } catch {
     notFound.value = true
-  } finally {
-    loading.value = false
   }
 }
 
 function openEdit() {
   editing.value = true
-  savedMessage.value = ''
   slotsInput.value = trek.value.available_slots
   statusInput.value = trek.value.status
 }
@@ -62,8 +64,8 @@ function closeEdit() {
 }
 
 async function saveEdit() {
+  if (saving.value) return
   saving.value = true
-  savedMessage.value = ''
   try {
     const data = await updateStaffTrek(trek.value.id, {
       available_slots: slotsInput.value,
@@ -71,8 +73,15 @@ async function saveEdit() {
     })
     trek.value = data.trek
     editing.value = false
-    savedMessage.value = 'Trek updated successfully.'
-  } catch {
+    toast.success('Trek updated successfully', {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    })
+  } catch (e) {
+    toast.error(e?.message || 'Failed to update trek', {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    })
   } finally {
     saving.value = false
   }
@@ -85,12 +94,7 @@ async function saveEdit() {
       <i class="bi bi-arrow-left me-1"></i>Back to dashboard
     </button>
 
-    <div v-if="loading" class="text-center text-secondary py-5">
-      <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
-      Loading trek...
-    </div>
-
-    <div v-else-if="notFound" class="alert alert-danger">Trek not found or you don't have access.</div>
+    <div v-if="notFound" class="alert alert-danger">Trek not found or you don't have access.</div>
 
     <template v-else-if="trek">
       <div class="mb-4">
@@ -105,8 +109,6 @@ async function saveEdit() {
           <span class="badge rounded-pill bg-secondary text-white">{{ trek.participants?.length || 0 }} registered</span>
         </div>
       </div>
-
-      <div v-if="savedMessage" class="alert alert-success py-2">{{ savedMessage }}</div>
 
       <!-- manage slots / status -->
       <div class="card shadow-sm mb-4">
@@ -141,10 +143,7 @@ async function saveEdit() {
               </select>
             </div>
             <div class="col-md-4 d-flex align-items-end gap-2">
-              <button class="btn btn-primary" :disabled="saving" @click="saveEdit">
-                <span v-if="saving" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                Save
-              </button>
+              <button class="btn btn-primary" @click="saveEdit">Save</button>
               <button class="btn btn-outline-secondary" @click="closeEdit">Cancel</button>
             </div>
           </div>

@@ -6,15 +6,15 @@ from flask import current_app
 
 
 def init_mail(app):
-    # Mailpit dev server runs its SMTP on localhost:1025 (no auth / TLS by default)
+    # mailpit smtp on 1025, ui on 8025
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'localhost')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 1025))
-    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'false').lower() == 'true'
+    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'false').lower() == 'true' # some security stuff
     app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@trekbase.com')
 
 
 def send_email(recipient, subject, html_content, text_content=None):
-    # reads settings from current_app (set up by init_mail)
+    # gets the context from the flask app context else fallsback
     smtp_server = current_app.config.get("MAIL_SERVER", "localhost")
     smtp_port = current_app.config.get("MAIL_PORT", 1025)
     use_tls = current_app.config.get("MAIL_USE_TLS", False)

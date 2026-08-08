@@ -5,6 +5,7 @@ import { state, clearAuth } from '@/store/auth'
 const router = useRouter()
 const route = useRoute()
 
+// # different link for each role
 function links() {
   const role = state.role
   if (role === 'admin') {
@@ -56,7 +57,7 @@ function handleLogout() {
 
         
         <div class="d-flex align-items-center gap-2 ms-auto">
-            <!-- add a role indicator here -->
+            <!-- role indicator text -->
           <span class="text-white">
             {{ state.role }}
           </span>

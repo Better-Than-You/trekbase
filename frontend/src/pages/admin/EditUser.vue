@@ -17,7 +17,6 @@ const userId = route.params.id
 // form fields, prefilled when the page loads
 const name = ref('')
 const email = ref('')
-const password = ref('')
 const address = ref('')
 const pin = ref('')
 const phone = ref('')
@@ -44,7 +43,6 @@ onMounted(async () => {
 // send the edited values back to the backend
 async function handleSubmit() {
   try {
-    // only send the password if a new one was typed in
     const payload = {
       name: name.value,
       email: email.value,
@@ -52,7 +50,6 @@ async function handleSubmit() {
       pin: pin.value,
       phone: phone.value,
     }
-    if (password.value) payload.password = password.value
 
     await updateUser(userId, payload)
     toast.success('User updated successfully', {
@@ -93,11 +90,6 @@ async function handleSubmit() {
             <div class="mb-3">
               <label class="form-label small fw-semibold">Email</label>
               <input v-model="email" type="email" class="form-control" required placeholder="you@example.com">
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">New Password</label>
-              <input v-model="password" type="password" class="form-control" minlength="6" placeholder="Leave blank to keep current password">
             </div>
 
             <div class="row">

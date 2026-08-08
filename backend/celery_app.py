@@ -18,7 +18,7 @@ celery_app = Celery(
 celery.app.trace.setup_worker_optimizations = lambda *args, **kwargs: None
 
 celery_app.conf.update(
-    imports=('tasks',),
+    imports=('tasks',), # the tasks.py one
     timezone='Asia/Kolkata',
     beat_schedule={
         # 'test-notification-every-10s': {
@@ -37,9 +37,8 @@ celery_app.conf.update(
     }
 )
 
-
-def get_flask_app() -> Flask:
-    """Create a minimal Flask app so Celery tasks can use db + mail."""
+# needed for the subclass
+def get_flask_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///trekbase.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -51,9 +50,29 @@ def get_flask_app() -> Flask:
 
     return app
 
+# app = Flask(__name__)
+#     app.config.from_mapping(
+#         CELERY=dict(
+#             broker_url="redis://localhost",
+#             result_backend="redis://localhost",
+#             task_ignore_result=True,
+#         ),
+#     )
+#     app.config.from_prefixed_env()
+#     celery_init_app(app)
+#     return app
+# 
+# 
+# 
+# 
+# from example import create_app
+# 
+# flask_app = create_app()
+# celery_app = flask_app.extensions["celery"]
 
+
+# custom subclass for task so that the celery works with the flask context
 class FlaskTask(Task):
-    """Celery task that runs inside a Flask app context."""
     _flask_app = None
 
     @property

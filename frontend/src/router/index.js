@@ -56,11 +56,11 @@ router.beforeEach((to) => {
 
   // logged in
   if (token) {
-    // wrong role trying to reach a protected route
+    // trying to go in a protected route
     if (needsRole && role !== needsRole) {
-      return { path: dashboards[role] || '/' }
+      return { path: dashboards[role] || '/' } // go  to either dashboard or landing page
     }
-    // logged in visiting home or auth pages -> send to their dashboard
+    // redirect to dashboard if logged in
     if (!needsRole && (to.name === 'home' || to.name === 'login' || to.name === 'register')) {
       return { path: dashboards[role] || '/' }
     }
@@ -69,7 +69,7 @@ router.beforeEach((to) => {
 
   // not logged in
   if (needsRole) {
-    return { path: '/auth/login', query: { redirect: to.fullPath } }
+    return { path: '/auth/login' }
   }
   return true
 })

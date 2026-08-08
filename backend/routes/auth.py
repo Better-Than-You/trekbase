@@ -9,8 +9,7 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@trekbase.com')
 
 auth_bp = Blueprint('auth', __name__)
 
-
-# build the login payload: entity dict + role, and mint access/refresh tokens
+# given details creates tokens and returns it
 def auth_response(entity_dict, role):
     tokens = {
         'identity': str(entity_dict['id']),
@@ -26,7 +25,6 @@ def auth_response(entity_dict, role):
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    # grab and validate the form values
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No input data provided'}), 400
@@ -38,23 +36,21 @@ def register():
     if not email or not password or not name:
         return jsonify({'error': 'Email, password and name are required'}), 400
 
-    # emails are unique - reject a duplicate signup
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already registered'}), 409
 
-    # create the trekker account and log them in straight away
     user = User(email=email, name=name)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
 
+    # tokens create
     payload = auth_response(user.to_dict(), 'user')
     return jsonify({'message': 'User created successfully', **payload}), 201
 
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    # grab and validate the form values
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No input data provided'}), 400
@@ -67,17 +63,14 @@ def login():
 
     user = User.query.filter_by(email=email).first()
     if user and user.check_password(password):
-        # blacklisted, can't login
-        if user.is_blacklisted:
+        if user.is_blacklisted: # BLACKLIST CHECK HERE < -----------------------------------
             return jsonify({'error': 'Account is blacklisted'}), 403
         role = 'admin' if email == ADMIN_EMAIL else 'user'
         return jsonify(auth_response(user.to_dict(), role)), 200
 
-    # otherwise try staff accounts
     staff = Staff.query.filter_by(email=email).first()
     if staff and staff.password_hash and staff.check_password(password):
-        # blacklisted, can't login
-        if staff.is_blacklisted:
+        if staff.is_blacklisted: # BLACKLIST CHECK HERE < -----------------------------------
             return jsonify({'error': 'Account is blacklisted'}), 403
         return jsonify(auth_response(staff.to_dict(), 'staff')), 200
 
@@ -97,7 +90,7 @@ def profile():
 @auth_bp.route('/refresh', methods=['POST'])
 @jwt_required(refresh=True)
 def refresh():
-    # exchange a valid refresh token for a fresh access token
+    # basically renews the access token
     claims = get_jwt()
     access_token = create_access_token(
         identity=str(get_jwt_identity()),

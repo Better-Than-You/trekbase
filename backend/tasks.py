@@ -55,7 +55,7 @@ def monthly_activity_report():
                 'bookings': count,
             })
 
-    # treks conducted (started) that month + distinct participating users
+    # count of treks happened in that month
     conducted = Trek.query.filter(
         Trek.start_date >= month_start.date(),
         Trek.start_date < month_end.date(),

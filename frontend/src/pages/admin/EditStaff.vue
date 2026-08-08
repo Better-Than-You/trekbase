@@ -18,7 +18,6 @@ const staffId = route.params.id
 const name = ref('')
 const contact = ref('')
 const email = ref('')
-const password = ref('')
 const status = ref('available')
 
 // load the current staff data and fill the form
@@ -41,9 +40,7 @@ onMounted(async () => {
 // send the edited values back to the backend
 async function handleSubmit() {
   try {
-    // only send the password if a new one was typed in
     const payload = { name: name.value, contact: contact.value, email: email.value, status: status.value }
-    if (password.value) payload.password = password.value
 
     await updateStaff(staffId, payload)
     toast.success('Staff updated successfully', {
@@ -98,11 +95,6 @@ async function handleSubmit() {
                 <option value="assigned">Assigned</option>
                 <option value="not_available">Not Working</option>
               </select>
-            </div>
-
-            <div class="mb-4">
-              <label class="form-label small fw-semibold">New Password</label>
-              <input v-model="password" type="password" class="form-control" minlength="6" placeholder="Leave blank to keep current password">
             </div>
 
             <div class="d-flex gap-2">
