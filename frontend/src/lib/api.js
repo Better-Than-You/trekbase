@@ -34,6 +34,14 @@ export function getAdminDashboard() {
   return request('/admin/dashboard')
 }
 
+export function triggerReminders() {
+  return request('/admin/jobs/reminders', { method: 'POST' })
+}
+
+export function triggerMonthlyReport() {
+  return request('/admin/jobs/monthly-report', { method: 'POST' })
+}
+
 export function getAdminUsers(q) {
   const query = q ? `?q=${encodeURIComponent(q)}` : ''
   return request(`/admin/users${query}`)

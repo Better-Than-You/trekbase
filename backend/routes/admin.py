@@ -464,3 +464,24 @@ def delete_trek(trek_id):
     invalidate_treks()
     return jsonify({'message': 'Trek deleted'}), 200
 
+
+# manually trigger the Celery email jobs (same code as the scheduled runs)
+@admin_bp.route('/jobs/reminders', methods=['POST'])
+@jwt_required()
+def trigger_reminders():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    from tasks import daily_trek_reminders
+    result = daily_trek_reminders.delay()
+    return jsonify({'message': 'Daily reminders triggered', 'task_id': result.id}), 202
+
+
+@admin_bp.route('/jobs/monthly-report', methods=['POST'])
+@jwt_required()
+def trigger_monthly_report():
+    if get_jwt().get('role') != 'admin':
+        return jsonify({'error': 'Forbidden'}), 403
+    from tasks import monthly_activity_report
+    result = monthly_activity_report.delay()
+    return jsonify({'message': 'Monthly report triggered', 'task_id': result.id}), 202
+

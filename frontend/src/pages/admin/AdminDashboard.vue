@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getAdminDashboard, deleteUser, deleteStaff, deleteTrek } from '@/lib/api'
+import { getAdminDashboard, deleteUser, deleteStaff, deleteTrek, triggerReminders, triggerMonthlyReport } from '@/lib/api'
 import { difficultyBadge, statusBadge, bookingBadge, staffBadge } from '@/lib/badges'
 
 import { toast } from 'vue3-toastify';
@@ -15,6 +15,26 @@ const data = ref({
 })
 
 const bookingQuery = ref('')
+const sending = ref(false)
+
+async function handleTrigger(fn, label) {
+  if (!confirm(`Trigger ${label} now?`)) return
+  sending.value = true
+  try {
+    const data = await fn()
+    toast.success(`${label} triggered (task ${data.task_id}).`, {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    })
+  } catch (e) {
+    toast.error(e.message, {
+      position: toast.POSITION.BOTTOM_CENTER,
+      autoClose: 3000,
+    })
+  } finally {
+    sending.value = false
+  }
+}
 
 const filteredBookings = computed(() => {
   const q = bookingQuery.value.trim().toLowerCase()
@@ -83,10 +103,18 @@ function formatDateTime(dt) {
 
 <template>
   <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
       <div>
         <h4 class="fw-bold text-uppercase mb-0" style="letter-spacing: 0.04em;">Admin Dashboard</h4>
         <p class="text-secondary small mb-0">An overview of everything happening in the system</p>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <button type="button" class="btn btn-sm btn-outline-primary" :disabled="sending" @click="handleTrigger(triggerReminders, 'Daily reminders')">
+          <i class="bi bi-bell me-1"></i>Send Reminders
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" :disabled="sending" @click="handleTrigger(triggerMonthlyReport, 'Monthly report')">
+          <i class="bi bi-envelope-paper me-1"></i>Send Monthly Report
+        </button>
       </div>
     </div>
 

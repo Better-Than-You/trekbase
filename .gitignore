@@ -1,9 +1,11 @@
-.env*
+.env
 !.env.example
 __pycache__/
 *.pyc
 instance/
 .venv/
-inspo/
 run.sh
 FEATURES.md
+
+# add scheduler files
+celerybeat-schedule*

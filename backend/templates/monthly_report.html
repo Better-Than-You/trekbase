@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Report - {{ month }} {{ year }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-success text-white py-3">
+                <h1 class="h4 mb-0">Monthly Trekking Activity Report</h1>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <p class="mb-1 text-muted small">Treks conducted</p>
+                            <p class="mb-0 fw-semibold">{{ summary.treks }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <p class="mb-1 text-muted small">Users participated</p>
+                            <p class="mb-0 fw-semibold">{{ summary.users }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <p class="mb-1 text-muted small">Total bookings</p>
+                            <p class="mb-0 fw-semibold">{{ summary.bookings }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white h-100">
+                            <p class="mb-1 text-muted small">Month</p>
+                            <p class="mb-0 fw-semibold text-capitalize">{{ month }} {{ year }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h5 mb-0">Popular Treks</h2>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Trek Name</th>
+                                <th>Location</th>
+                                <th>Difficulty</th>
+                                <th>Bookings</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trek in popular %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ trek.name }}</td>
+                                <td>{{ trek.location }}</td>
+                                <td class="text-capitalize">{{ trek.difficulty }}</td>
+                                <td>{{ trek.bookings }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

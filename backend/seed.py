@@ -40,7 +40,7 @@ TREKS = [
     ("Helambu Trek", "Sindhupalchok", "easy", 6, 16),
 ]
 
-STATUSES = ["pending", "approved", "open", "open", "open", "completed"]
+STATUSES = ["open", "open", "open", "completed", "closed"]
 
 
 def main():
